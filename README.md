@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚀 Crypto Analyst
 
 AI destekli günlük kripto analiz platformu. Her gün saat **09:00**'da otomatik olarak coin analizleri ve site raporu oluşturur.
@@ -183,3 +184,6 @@ docker-compose exec nginx nginx -s reload
 ---
 
 **Her gün 09:00'da otomatik güncellenir. ⏰**
+=======
+# crypto-analyst
+>>>>>>> 244bd73bc8d21d940b38f249fc01635a2012f164
