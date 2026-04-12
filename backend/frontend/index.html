@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Analyst — AI Destekli Kripto Analiz</title>
+  <meta name="description" content="Yapay zeka destekli günlük kripto para analizleri. Bitcoin, Ethereum, Solana ve daha fazlası için güncel yorumlar." />
+  <meta name="keywords" content="kripto analiz, bitcoin yorum, ethereum analiz, coin tahmin, kripto haber" />
+  <meta property="og:title" content="Crypto Analyst" />
+  <meta property="og:description" content="AI destekli günlük kripto analiz platformu" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ═══ TOAST ════════════════════════════════════════════════════════════ -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ═══ HEADER (hero_landing design) ════════════════════════════════════ -->
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="#analizler">Analizler</a>
+      <a href="#raporlar">Raporlar</a>
+      <a href="#haberler">Haberler</a>
+      <a href="#hakkinda">Hakkında</a>
+    </nav>
+
+    <div class="header-actions">
+      <div class="market-pill">
+        <span class="market-dot"></span>
+        <span>Canlı</span>
+      </div>
+      <div id="authArea" class="auth-btns">
+        <button class="btn-ghost" onclick="openModal('loginModal')">Giriş</button>
+        <button class="btn-primary" onclick="openModal('registerModal')">Başla</button>
+      </div>
+      <div id="userArea" style="display:none" class="auth-btns">
+        <div class="user-chip" id="userBadge"></div>
+        <button class="btn-ghost" onclick="logout()">Çıkış</button>
+      </div>
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ TICKER ═══════════════════════════════════════════════════════════ -->
+<div class="ticker-wrap">
+  <div class="ticker-label">CANLI</div>
+  <div class="ticker-track" id="ticker">
+    <div class="ticker-loading">Fiyatlar yükleniyor…</div>
+  </div>
+</div>
+
+<!-- ═══ HERO (hero_landing design) ══════════════════════════════════════ -->
+<section class="hero">
+  <!-- BG effects -->
+  <div class="hero-bg">
+    <div class="hero-glow hero-glow-1"></div>
+    <div class="hero-glow hero-glow-2"></div>
+    <div class="hero-grid-pattern"></div>
+  </div>
+
+  <div class="container hero-inner">
+    <!-- Badge -->
+    <div class="hero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Claude AI ile destekleniyor · Günlük güncelleme</span>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="hero-title">
+      Piyasayı <em>anlayan</em><br>
+      <span class="hero-title-muted">tek analiz platformu.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Teknik veriler, on-chain sinyaller ve makro faktörlerin kusursuz sentezi.<br>
+      Sadece bilgi, sıfır gürültü.
+    </p>
+
+    <!-- CTA -->
+    <div class="hero-cta">
+      <button class="btn-hero" onclick="document.getElementById('analizler').scrollIntoView({behavior:'smooth'})">
+        Analiz Başlat
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <button class="btn-ghost" onclick="openModal('loginModal')">Demo Gör</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num" id="statTotal">—</div>
+        <div class="stat-label">Toplam Analiz</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Takip Edilen Coin</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num" id="statTime">—:—</div>
+        <div class="stat-label">Güncel Saat</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num" id="statToday">—</div>
+        <div class="stat-label">Bugünkü Analiz</div>
+      </div>
+    </div>
+
+    <!-- Demo analysis preview card -->
+    <div class="hero-demo-card" id="heroDemoCard">
+      <div class="demo-card-header">
+        <div class="demo-coin-info">
+          <div class="demo-coin-avatar">₿</div>
+          <div>
+            <div class="demo-coin-name">Bitcoin</div>
+            <div class="demo-coin-sym">BTC</div>
+          </div>
+        </div>
+        <div class="demo-ai-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          AI Analiz
+        </div>
+      </div>
+      <div class="demo-card-body">
+        <div class="demo-metrics">
+          <div class="demo-metric-item">
+            <div class="demo-metric-label">Piyasa Duyarlılığı</div>
+            <div class="demo-metric-bar">
+              <div class="demo-metric-fill" id="demoFill" style="width:0%"></div>
+            </div>
+            <div class="demo-metric-footer">
+              <span class="demo-trend bullish">↑ Boğa Trendi</span>
+              <span class="demo-pct" id="demoPct">0%</span>
+            </div>
+          </div>
+        </div>
+        <div class="demo-quick-stats">
+          <div class="demo-stat-box">
+            <div class="demo-stat-icon">🛡</div>
+            <div class="demo-stat-label">Risk</div>
+            <div class="demo-stat-val">Orta</div>
+          </div>
+          <div class="demo-stat-box">
+            <div class="demo-stat-icon">⚡</div>
+            <div class="demo-stat-label">Volatilite</div>
+            <div class="demo-stat-val">Ilımlı</div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card-footer">
+        <span class="demo-update-text">Analiz 2 dakika önce güncellendi</span>
+        <button class="demo-report-link" onclick="document.getElementById('analizler').scrollIntoView({behavior:'smooth'})">
+          Tam Raporu Gör →
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ANA İÇERİK ════════════════════════════════════════════════════════ -->
+<main class="main-content" id="analizler">
+  <div class="container">
+
+    <!-- Coin Seçim -->
+    <div class="section-header">
+      <h2 class="section-title">Coin Analizi</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="coin-grid" id="coinTabs"></div>
+
+    <div class="content-grid">
+
+      <!-- SOL: ANALİZ ALANI -->
+      <div class="left-col">
+
+        <!-- PRICE CARD -->
+        <div class="price-card" id="priceCard">
+          <div class="price-card-header">
+            <div class="price-card-left">
+              <div class="coin-avatar" id="priceAvatar">₿</div>
+              <div>
+                <div class="price-coin-name" id="cardCoin">Bitcoin</div>
+                <div class="price-coin-date" id="cardDate"></div>
+              </div>
+            </div>
+            <div class="price-block">
+              <div class="price-val" id="cardPrice">—</div>
+              <div class="price-change" id="cardChange">—</div>
+            </div>
+          </div>
+          <div class="sparkline-wrap">
+            <canvas id="sparkCanvas" height="48"></canvas>
+          </div>
+        </div>
+
+        <!-- AI RESULT PANEL (AI_ResultPanel design) -->
+        <div class="ai-panel" id="aiPanel">
+          <!-- Empty state -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <p class="empty-title">Bir coin seçin ve analiz başlatın</p>
+            <p class="empty-sub" id="emptyHint">Analiz oluşturmak için giriş yapmanız gerekiyor</p>
+          </div>
+
+          <!-- Panel header (gizli başlangıçta) -->
+          <div class="panel-header" id="panelHeader" style="display:none">
+            <div class="panel-header-left">
+              <div class="panel-asset-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div>
+                <h3 class="panel-asset-name" id="panelCoinName">Bitcoin <span class="panel-sym" id="panelCoinSym">(BTC)</span></h3>
+                <div class="panel-timestamp">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span id="panelTimestamp">—</span>
+                </div>
+              </div>
+            </div>
+            <button class="btn-refresh" id="refreshBtn" onclick="generateAnalysis()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              Yenile
+            </button>
+          </div>
+
+          <!-- Metric cards grid (AI_ResultPanel design) -->
+          <div class="metric-cards-grid" id="metricCardsGrid" style="display:none">
+            <!-- Signal Card -->
+            <div class="metric-card signal-card" id="signalCard">
+              <div class="mc-top">
+                <div>
+                  <div class="mc-label">AI Sinyali</div>
+                  <div class="mc-sub" id="signalSym">BTC</div>
+                </div>
+                <div class="mc-icon-wrap" id="signalIconWrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="signalIcon"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+              </div>
+              <div class="mc-value signal-val" id="signalLabel">—</div>
+            </div>
+
+            <!-- Confidence Card -->
+            <div class="metric-card confidence-card" id="confidenceCard">
+              <div class="mc-top">
+                <div>
+                  <div class="mc-label">AI Güveni</div>
+                  <div class="mc-sub">Model kesinliği</div>
+                </div>
+                <div class="mc-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+              </div>
+              <div class="mc-big-num">
+                <span class="conf-num" id="confNum">—</span><span class="conf-pct">%</span>
+              </div>
+              <div class="conf-bar-wrap">
+                <div class="conf-bar-track">
+                  <div class="conf-bar-fill" id="confBar" style="width:0%"></div>
+                </div>
+                <div class="conf-bar-labels">
+                  <span>Düşük</span><span>Yüksek</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk Card -->
+            <div class="metric-card risk-card" id="riskCard">
+              <div class="mc-top">
+                <div>
+                  <div class="mc-label">Risk Seviyesi</div>
+                  <div class="mc-sub">Piyasa değerlendirmesi</div>
+                </div>
+                <div class="mc-icon-wrap" id="riskIconWrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="riskIcon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+              </div>
+              <div class="mc-value risk-val" id="riskLabel">—</div>
+              <div class="mc-sub risk-desc" id="riskDesc">—</div>
+              <div class="risk-bars" id="riskBars">
+                <div class="risk-bar"></div>
+                <div class="risk-bar"></div>
+                <div class="risk-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explanation Card (AI_ResultPanel design) -->
+          <div class="explanation-card" id="explanationCard" style="display:none">
+            <div class="expl-header">
+              <div class="expl-ai-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div>
+                <div class="expl-title">AI Analizi</div>
+                <div class="expl-sub">Oluşturulan değerlendirme</div>
+              </div>
+            </div>
+
+            <!-- Key Factors -->
+            <div class="key-factors" id="keyFactors" style="display:none">
+              <div class="kf-header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Temel Faktörler
+              </div>
+              <ul class="kf-list" id="kfList"></ul>
+            </div>
+
+            <!-- Analysis text -->
+            <div class="analysis-content" id="analysisContent"></div>
+          </div>
+
+          <!-- Generate button -->
+          <div class="panel-footer" id="panelFooter">
+            <div class="footer-hint" id="footerHint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span id="hintText">Analiz oluşturmak için giriş yapın</span>
+            </div>
+            <button class="btn-generate" id="genBtn" onclick="generateAnalysis()" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span id="genBtnText">Analiz Oluştur</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GÜNLÜK RAPOR -->
+        <div class="section-header" id="raporlar" style="margin-top:56px">
+          <h2 class="section-title">Günlük Rapor</h2>
+          <div class="section-line"></div>
+        </div>
+        <div class="report-card" id="reportCard">
+          <div class="empty-state small">
+            <div class="empty-icon small">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <p class="empty-title small">Rapor yükleniyor…</p>
+          </div>
+        </div>
+
+        <!-- HABERLER -->
+        <div class="section-header" id="haberler" style="margin-top:56px">
+          <h2 class="section-title">Son Dakika</h2>
+          <span class="news-badge" id="newsCount"></span>
+          <div class="section-line"></div>
+        </div>
+
+        <div class="digest-card">
+          <div class="digest-header">
+            <span>🗞️</span>
+            <span class="digest-title">AI Günlük Haber Özeti</span>
+            <span class="digest-tag">Türkçe</span>
+          </div>
+          <div id="digestCard">
+            <div class="digest-loading">Özet yükleniyor…</div>
+          </div>
+        </div>
+
+        <div id="newsBody" class="news-list">
+          <div class="empty-state small">
+            <p class="empty-title small">Haberler yükleniyor…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAĞ: SIDEBAR -->
+      <div class="right-col">
+
+        <!-- CREDIT / USAGE CARD (creditpage design v2) -->
+        <div class="usage-card" id="usageCard" style="display:none">
+          <div class="usage-header">
+            <div class="usage-header-left">
+              <div class="usage-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <span class="usage-title">Günlük Kullanım</span>
+            </div>
+            <span class="usage-reset">Gece yarısı sıfırlanır</span>
+          </div>
+
+          <div class="usage-stats">
+            <div class="usage-nums">
+              <span class="usage-used" id="usageUsed">0</span>
+              <span class="usage-limit" id="usageLimit">/ 2</span>
+            </div>
+            <span class="usage-remaining" id="usageRemaining">2 kalan</span>
+          </div>
+
+          <div class="usage-bar-track">
+            <div class="usage-bar-fill" id="usageBar" style="width:0%"></div>
+          </div>
+
+          <!-- Upgrade box (creditpage tasarımı) -->
+          <div class="upgrade-box" id="upgradeBox" onclick="openPricingModal()">
+            <div class="upgrade-box-inner">
+              <div class="upgrade-icon" id="upgradeIcon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div class="upgrade-text">
+                <div class="upgrade-title">Sınırsız analiz kilidi aç</div>
+                <div class="upgrade-sub">Günlük limit yok — VIP erişim</div>
+              </div>
+            </div>
+          </div>
+          <button class="btn-upgrade" onclick="openPricingModal()">
+            VIP'e Geç
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+
+        <!-- VIP BADGE -->
+        <div class="vip-badge-card" id="vipBadgeCard" style="display:none">
+          <div class="vip-icon">⚡</div>
+          <div class="vip-text">
+            <div class="vip-title">VIP Üye</div>
+            <div class="vip-sub">Sınırsız analiz erişimi aktif</div>
+          </div>
+        </div>
+
+        <!-- METRİKLER -->
+        <div class="side-card" style="margin-top:0" id="metricsCard">
+          <div class="side-card-header">
+            <div class="side-card-title">Site Metrikleri</div>
+            <div class="side-card-sub" id="metricTime">—</div>
+          </div>
+          <div class="side-card-body">
+            <div class="metric-row">
+              <div class="metric-info">
+                <span class="metric-name">SEO Skoru</span>
+                <span class="metric-val" id="seoVal">—</span>
+              </div>
+              <div class="metric-bar-track">
+                <div class="metric-bar-fill orange" id="seoBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-info">
+                <span class="metric-name">Performans</span>
+                <span class="metric-val" id="perfVal">—</span>
+              </div>
+              <div class="metric-bar-track">
+                <div class="metric-bar-fill blue" id="perfBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-info">
+                <span class="metric-name">İçerik Kalitesi</span>
+                <span class="metric-val" id="contVal">—</span>
+              </div>
+              <div class="metric-bar-track">
+                <div class="metric-bar-fill green" id="contBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="kw-block">
+              <div class="kw-label">SEO Anahtar Kelimeler</div>
+              <div id="kwArea" class="kw-tags"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GEÇMİŞ ANALİZLER -->
+        <div class="side-card" style="margin-top:16px">
+          <div class="side-card-header">
+            <div class="side-card-title">Geçmiş Analizler</div>
+            <div class="side-card-sub" id="histCount">0 kayıt</div>
+          </div>
+          <div class="side-card-body" id="histBody">
+            <div class="empty-state small"><p class="empty-title small">Henüz analiz yok</p></div>
+          </div>
+        </div>
+
+        <!-- POPÜLER COİNLER -->
+        <div class="side-card" style="margin-top:16px">
+          <div class="side-card-header">
+            <div class="side-card-title">En Çok Analiz</div>
+          </div>
+          <div class="side-card-body" id="popularBody">
+            <div class="empty-state small"><p class="empty-title small">Yükleniyor…</p></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════════════════════ -->
+<footer class="footer" id="hakkinda">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="logo footer-logo">
+          <div class="logo-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span>crypto<strong>analyst</strong></span>
+        </a>
+        <p class="footer-desc">
+          AI destekli günlük kripto analiz platformu. Her gün Claude AI tarafından otomatik güncellenir.
+        </p>
+        <div class="footer-disclaimer">
+          ⚠️ Bu platform yatırım tavsiyesi vermez. Tüm içerikler yalnızca bilgilendirme amaçlıdır.
+        </div>
+      </div>
+      <div class="footer-links-group">
+        <div class="footer-col">
+          <div class="footer-col-title">Platform</div>
+          <a class="footer-link" href="#analizler">Coin Analizleri</a>
+          <a class="footer-link" href="#raporlar">Günlük Raporlar</a>
+          <a class="footer-link" href="#haberler">Haberler</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Coinler</div>
+          <div class="footer-coins">
+            <span class="footer-coin-tag">BTC</span>
+            <span class="footer-coin-tag">ETH</span>
+            <span class="footer-coin-tag">SOL</span>
+            <span class="footer-coin-tag">BNB</span>
+            <span class="footer-coin-tag">XRP</span>
+            <span class="footer-coin-tag">ADA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 CryptoAnalyst — Tüm hakları saklıdır.</span>
+      <span class="footer-live">
+        <span class="market-dot small"></span>
+        Her gün güncellenir
+      </span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ MODALlar ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="loginModal" onclick="closeModal('loginModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('loginModal')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-logo">
+      <div class="logo-icon-wrap sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+    </div>
+    <h2 class="modal-title">Giriş Yap</h2>
+    <p class="modal-sub">AI analizlerine erişmek için giriş yapın</p>
+    <div id="loginError" class="form-error" style="display:none"></div>
+    <div class="form-group">
+      <label class="form-label">E-posta</label>
+      <input class="form-input" type="email" id="loginEmail" placeholder="ornek@email.com" onkeydown="if(event.key==='Enter')login()" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Şifre</label>
+      <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" />
+    </div>
+    <button class="btn-primary full" id="loginBtn" onclick="login()">Giriş Yap</button>
+    <p class="modal-switch">Hesabın yok mu? <a onclick="switchModal('loginModal','registerModal')">Kayıt ol →</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="registerModal" onclick="closeModal('registerModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal('registerModal')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-logo">
+      <div class="logo-icon-wrap sm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+    </div>
+    <h2 class="modal-title">Hesap Oluştur</h2>
+    <p class="modal-sub">Ücretsiz hesap açın, anında erişin</p>
+    <div id="registerError" class="form-error" style="display:none"></div>
+    <div class="form-group">
+      <label class="form-label">Kullanıcı Adı</label>
+      <input class="form-input" type="text" id="regUsername" placeholder="kullanici_adi" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-posta</label>
+      <input class="form-input" type="email" id="regEmail" placeholder="ornek@email.com" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Şifre <span class="form-hint">min 8 karakter, büyük harf ve rakam</span></label>
+      <input class="form-input" type="password" id="regPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')register()" />
+    </div>
+    <button class="btn-primary full" id="registerBtn" onclick="register()">Kayıt Ol</button>
+    <p class="modal-switch">Hesabın var mı? <a onclick="switchModal('registerModal','loginModal')">Giriş yap →</a></p>
+  </div>
+</div>
+
+<!-- ═══ PRİCİNG MODAL ════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="pricingModal" onclick="closePricingModal()">
+  <div class="modal pricing-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closePricingModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <div class="pricing-header">
+      <div class="pricing-badge">⚡ VIP Üyelik</div>
+      <h2 class="pricing-title">Sınırsız AI Analizi</h2>
+      <p class="pricing-sub">Günlük limit yok. Tüm coinler. Öncelikli erişim.</p>
+    </div>
+
+    <!-- Plan kartları -->
+    <div class="plan-cards">
+      <!-- Aylık -->
+      <div class="plan-card" id="planMonthly" onclick="selectPlan('monthly')">
+        <div class="plan-card-inner">
+          <div class="plan-name">Aylık</div>
+          <div class="plan-price">
+            <span class="plan-amount">$9.99</span>
+            <span class="plan-period">/ ay</span>
+          </div>
+          <div class="plan-desc">İstediğin zaman iptal et</div>
+        </div>
+        <div class="plan-check" id="checkMonthly"></div>
+      </div>
+
+      <!-- Yıllık -->
+      <div class="plan-card active" id="planYearly" onclick="selectPlan('yearly')">
+        <div class="plan-badge-top">💎 %33 İndirim</div>
+        <div class="plan-card-inner">
+          <div class="plan-name">Yıllık</div>
+          <div class="plan-price">
+            <span class="plan-amount">$6.67</span>
+            <span class="plan-period">/ ay</span>
+          </div>
+          <div class="plan-desc">$79.99 / yıl olarak faturalanır</div>
+        </div>
+        <div class="plan-check active" id="checkYearly">✓</div>
+      </div>
+    </div>
+
+    <!-- Özellikler -->
+    <ul class="plan-features">
+      <li><span class="feat-check">✓</span> Sınırsız AI analizi</li>
+      <li><span class="feat-check">✓</span> Tüm coinler (BTC, ETH, SOL, BNB, XRP, ADA)</li>
+      <li><span class="feat-check">✓</span> Detaylı teknik analiz raporları</li>
+      <li><span class="feat-check">✓</span> Günlük piyasa özeti</li>
+      <li><span class="feat-check">✓</span> Öncelikli destek</li>
+    </ul>
+
+    <!-- CTA -->
+    <button class="btn-primary full pricing-cta" id="pricingCta" onclick="startCheckout()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span id="pricingCtaText">Hemen Başla — $6.67/ay</span>
+    </button>
+
+    <p class="pricing-footer-note">
+      🔒 Güvenli ödeme · Stripe ile şifrelendi · İstediğin zaman iptal
+    </p>
+
+    <!-- Stripe yokken demo modu -->
+    <div id="demoUpgradeWrap" style="display:none">
+      <div class="demo-notice">
+        ⚠️ Ödeme sistemi henüz aktif değil — Demo modunda test edebilirsin
+      </div>
+      <button class="btn-ghost full" onclick="upgradeDemo()" style="margin-top:10px;width:100%;justify-content:center">
+        Demo VIP Aktifleştir
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/payments.js"></script>
+</body>
+</html>
