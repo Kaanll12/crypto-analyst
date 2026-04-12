@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gizlilik Politikası — CryptoAnalyst</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: oklch(0.09 0.005 260); --card: oklch(0.13 0.007 260);
+      --fg: oklch(0.97 0 0); --fg-muted: oklch(0.62 0.01 260);
+      --border: oklch(0.22 0.01 260); --accent: oklch(0.72 0.15 180);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7; }
+    .header { border-bottom: 1px solid var(--border); background: oklch(0.09 0.005 260 / 0.9); backdrop-filter: blur(16px); padding: 0 24px; }
+    .header-inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .logo { font-size: 16px; font-weight: 700; color: var(--fg); text-decoration: none; }
+    .logo strong { color: var(--accent); }
+    .back-link { font-size: 13px; color: var(--fg-muted); text-decoration: none; transition: color .2s; }
+    .back-link:hover { color: var(--fg); }
+    .container { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    .page-title { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .page-date { font-size: 13px; color: var(--fg-muted); margin-bottom: 40px; }
+    h2 { font-size: 17px; font-weight: 600; margin: 32px 0 10px; }
+    p { font-size: 14px; color: var(--fg-muted); margin-bottom: 12px; }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    li { font-size: 14px; color: var(--fg-muted); margin-bottom: 6px; }
+    a { color: var(--accent); }
+    .highlight { background: oklch(0.13 0.007 260); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin: 20px 0; font-size: 13px; color: var(--fg-muted); }
+    .highlight strong { color: var(--fg); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">crypto<strong>analyst</strong></a>
+      <a href="/" class="back-link">← Ana Sayfa</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1 class="page-title">Gizlilik Politikası</h1>
+    <p class="page-date">Son güncelleme: Nisan 2025</p>
+
+    <div class="highlight">
+      <strong>Özet:</strong> Verilerinizi üçüncü taraflara satmıyoruz. Yalnızca hizmetimizi sunmak için gerekli minimum veriyi topluyoruz.
+    </div>
+
+    <h2>1. Topladığımız Veriler</h2>
+    <p>Hesap oluştururken topladığımız veriler:</p>
+    <ul>
+      <li>E-posta adresi</li>
+      <li>Kullanıcı adı</li>
+      <li>Şifrelenmiş parola (bcrypt)</li>
+      <li>Analiz geçmişi</li>
+    </ul>
+    <p>Ödeme işlemlerinde toplanan veriler Paddle tarafından işlenir; kredi kartı bilgileri sistemimizde saklanmaz.</p>
+
+    <h2>2. Verileri Nasıl Kullanıyoruz</h2>
+    <ul>
+      <li>Hesabınızı yönetmek ve hizmet sunmak</li>
+      <li>AI analizlerini kişiselleştirmek</li>
+      <li>Güvenlik ve dolandırıcılık önleme</li>
+      <li>Hizmet geliştirme ve iyileştirme</li>
+    </ul>
+
+    <h2>3. Veri Paylaşımı</h2>
+    <p>Verilerinizi üçüncü taraflara satmıyoruz. Yalnızca şu durumlarda paylaşıyoruz:</p>
+    <ul>
+      <li><strong>Paddle:</strong> Ödeme işlemleri için</li>
+      <li><strong>Anthropic:</strong> AI analiz üretimi için (prompt verileri)</li>
+      <li><strong>Yasal zorunluluk:</strong> Mahkeme kararı veya yasal yükümlülük durumunda</li>
+    </ul>
+
+    <h2>4. Veri Güvenliği</h2>
+    <p>Tüm veriler HTTPS üzerinden şifreli iletilir. Parolalar bcrypt ile hashlenir. Veritabanı erişimi kısıtlıdır.</p>
+
+    <h2>5. Çerezler</h2>
+    <p>Yalnızca oturum yönetimi için JWT token kullanılır. Üçüncü taraf izleme çerezi kullanılmaz.</p>
+
+    <h2>6. Haklarınız</h2>
+    <ul>
+      <li>Verilerinizi görme ve indirme hakkı</li>
+      <li>Verilerinizi silme hakkı (hesap silme)</li>
+      <li>Veri işlemeye itiraz hakkı</li>
+    </ul>
+
+    <h2>7. Veri Saklama Süresi</h2>
+    <p>Hesabınız aktif olduğu sürece verileriniz saklanır. Hesap silindiğinde 30 gün içinde tüm veriler kalıcı olarak silinir.</p>
+
+    <h2>8. İletişim</h2>
+    <p>Gizlilik ile ilgili sorularınız için: <a href="mailto:destek@cryptoanalyst.com">destek@cryptoanalyst.com</a></p>
+  </div>
+</body>
+</html>
