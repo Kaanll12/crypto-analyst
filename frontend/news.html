@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Haberler — CryptoAnalyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/news.css"/>
+</head>
+<body>
+
+<!-- ═══ BACKGROUND ════════════════════════════════════════════════════════ -->
+<div class="bg-effects">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+</div>
+
+<!-- ═══ MOBILE MENU BTN ══════════════════════════════════════════════════ -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">
+  <svg id="menuIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- ═══ LAYOUT ════════════════════════════════════════════════════════════ -->
+<div class="news-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="news-sidebar" id="sidebar">
+    <!-- Logo -->
+    <a href="/" class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+
+    <a href="/" class="sidebar-back">← Ana Sayfa</a>
+
+    <!-- Sentiment -->
+    <div class="filter-section">
+      <div class="filter-label">Sentiment</div>
+      <div class="filter-btns" id="sentimentFilters">
+        <button class="filter-btn active" data-sentiment="all" onclick="setSentiment('all')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          Tüm Haberler
+        </button>
+        <button class="filter-btn bullish" data-sentiment="bullish" onclick="setSentiment('bullish')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Bullish
+        </button>
+        <button class="filter-btn bearish" data-sentiment="bearish" onclick="setSentiment('bearish')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          Bearish
+        </button>
+        <button class="filter-btn neutral" data-sentiment="neutral" onclick="setSentiment('neutral')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neutral
+        </button>
+      </div>
+    </div>
+
+    <!-- Coins -->
+    <div class="filter-section">
+      <div class="filter-label">Coinler</div>
+      <div class="filter-btns" id="coinFilters">
+        <button class="filter-btn active" data-coin="all" onclick="setCoin('all')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Tüm Coinler
+        </button>
+        <button class="filter-btn" data-coin="BTC" onclick="setCoin('BTC')"><span class="coin-sym">₿</span> Bitcoin</button>
+        <button class="filter-btn" data-coin="ETH" onclick="setCoin('ETH')"><span class="coin-sym">Ξ</span> Ethereum</button>
+        <button class="filter-btn" data-coin="SOL" onclick="setCoin('SOL')"><span class="coin-sym">◎</span> Solana</button>
+        <button class="filter-btn" data-coin="XRP" onclick="setCoin('XRP')"><span class="coin-sym">✕</span> Ripple</button>
+        <button class="filter-btn" data-coin="ADA" onclick="setCoin('ADA')"><span class="coin-sym">₳</span> Cardano</button>
+        <button class="filter-btn" data-coin="BNB" onclick="setCoin('BNB')"><span class="coin-sym">⬡</span> BNB</button>
+      </div>
+    </div>
+
+    <!-- Time -->
+    <div class="filter-section">
+      <div class="filter-label">Zaman Dilimi</div>
+      <div class="filter-btns" id="timeFilters">
+        <button class="filter-btn active" data-time="all" onclick="setTime('all')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Tümü
+        </button>
+        <button class="filter-btn" data-time="today" onclick="setTime('today')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Bugün
+        </button>
+        <button class="filter-btn" data-time="week" onclick="setTime('week')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Bu Hafta
+        </button>
+      </div>
+    </div>
+
+    <!-- Auto refresh -->
+    <div class="auto-refresh">
+      <div class="refresh-dot"></div>
+      <span>Her 5 dakikada güncellenir</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="news-main">
+    <div class="news-content">
+
+      <!-- Header -->
+      <header class="news-header">
+        <div class="news-header-left">
+          <h1 class="news-title">Kripto Haberleri & Analiz</h1>
+          <p class="news-sub">AI destekli anlık piyasa içgörüleri</p>
+        </div>
+        <div class="news-stats" id="newsStats">
+          <div class="stat-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bullish-icon"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+            <span id="bullishCount">—</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bearish-icon"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+            <span id="bearishCount">—</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="neutral-icon"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span id="neutralCount">—</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Haber ara: coin, konu, kaynak…" oninput="applyFilters()"/>
+        <div class="search-ai-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          AI
+        </div>
+      </div>
+
+      <!-- Active filters -->
+      <div class="active-filters" id="activeFilters" style="display:none">
+        <span class="af-label">Aktif filtreler:</span>
+        <span class="af-tag" id="afSentiment"></span>
+        <span class="af-tag" id="afCoin"></span>
+        <button class="af-clear" onclick="clearFilters()">Temizle</button>
+      </div>
+
+      <!-- AI Digest -->
+      <div class="digest-card" id="digestCard">
+        <div class="digest-header">
+          <span>🗞️</span>
+          <span class="digest-title">AI Günlük Haber Özeti</span>
+          <span class="digest-badge">Türkçe</span>
+          <button class="digest-refresh" onclick="loadDigest(true)" title="Yenile">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="digestRefreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </button>
+        </div>
+        <div id="digestBody" class="digest-body">
+          <div class="digest-loading">Özet yükleniyor…</div>
+        </div>
+      </div>
+
+      <!-- News feed -->
+      <div class="news-feed" id="newsFeed">
+        <div class="news-loading">
+          <div class="loading-spinner"></div>
+          <p>Haberler yükleniyor…</p>
+        </div>
+      </div>
+
+      <!-- Load more -->
+      <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
+        <button class="btn-load-more" onclick="loadMore()">
+          Daha Fazla Göster
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ═══ NEWS DETAIL MODAL ═════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="newsModal" onclick="closeNewsModal()">
+  <div class="modal news-detail-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeNewsModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="newsModalContent"></div>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="js/api.js"></script>
+<script src="js/news.js"></script>
+</body>
+</html>

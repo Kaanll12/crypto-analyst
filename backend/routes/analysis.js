@@ -147,6 +147,19 @@ router.post('/generate',
       const priceChange30d = extraData?.market_data?.price_change_percentage_30d?.toFixed(2) || null;
       const athDiff = ath && priceUsd ? (((priceUsd - ath) / ath) * 100).toFixed(1) : null;
 
+      // Anlık haber başlıklarını çek
+      let newsContext = '';
+      try {
+        const newsRes = await fetch(`https://api.coingecko.com/api/v3/news?page=1`).catch(() => null);
+        // RSS'den son haberleri al
+        const internalNewsRes = await fetch(`/api/news?coin=${coinSym}&limit=5`).catch(() => null);
+        if (internalNewsRes?.ok) {
+          const newsData = await internalNewsRes.json();
+          const headlines = (newsData.data || []).slice(0, 5).map(n => `- ${n.title}`).join('\n');
+          if (headlines) newsContext = `\n\n## Son Haberler (Anlık)\n${headlines}`;
+        }
+      } catch(_) {}
+
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
       const message = await client.messages.create({
@@ -167,7 +180,7 @@ ${low24h   ? `- 24s düşük: $${low24h.toLocaleString()}`       : ''}
 ${volume24h ? `- 24s hacim: $${(volume24h/1e9).toFixed(2)}B`  : ''}
 ${marketCap ? `- Piyasa değeri: $${(marketCap/1e9).toFixed(1)}B` : ''}
 ${athDiff   ? `- ATH'den uzaklık: ${athDiff}%`                : ''}
-${sentiment}
+${sentiment}${newsContext}
 
 ## ÖNEMLİ: Yanıtının EN BAŞINA aşağıdaki JSON bloğunu ekle (başka bir şey yazmadan önce):
 \`\`\`json
