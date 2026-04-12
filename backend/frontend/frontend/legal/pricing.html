@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fiyatlandırma — CryptoAnalyst</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: oklch(0.09 0.005 260); --card: oklch(0.13 0.007 260);
+      --card2: oklch(0.16 0.008 260); --fg: oklch(0.97 0 0);
+      --fg-muted: oklch(0.62 0.01 260); --fg-subtle: oklch(0.42 0.01 260);
+      --border: oklch(0.22 0.01 260); --border-mid: oklch(0.28 0.015 260);
+      --accent: oklch(0.72 0.15 180); --primary: oklch(0.70 0.15 145);
+      --primary-dim: oklch(0.70 0.15 145 / 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+    .header { border-bottom: 1px solid var(--border); background: oklch(0.09 0.005 260 / 0.9); backdrop-filter: blur(16px); padding: 0 24px; position: sticky; top: 0; z-index: 10; }
+    .header-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .logo { font-size: 16px; font-weight: 700; color: var(--fg); text-decoration: none; }
+    .logo strong { color: var(--accent); }
+    .back-link { font-size: 13px; color: var(--fg-muted); text-decoration: none; }
+    .back-link:hover { color: var(--fg); }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 64px 24px 80px; }
+
+    .hero { text-align: center; margin-bottom: 56px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; margin-bottom: 16px;
+      background: var(--primary-dim);
+      border: 1px solid oklch(0.70 0.15 145 / 0.3);
+      border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--primary);
+    }
+    .hero-title { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -.03em; margin-bottom: 12px; }
+    .hero-sub { font-size: 15px; color: var(--fg-muted); max-width: 480px; margin: 0 auto; }
+
+    /* Toggle */
+    .toggle-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
+    .toggle-label { font-size: 13px; color: var(--fg-muted); font-weight: 500; }
+    .toggle-label.active { color: var(--fg); }
+    .save-badge { padding: 2px 8px; background: var(--primary-dim); color: var(--primary); border: 1px solid oklch(0.70 0.15 145 / 0.25); border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .toggle { width: 44px; height: 24px; border-radius: 99px; background: var(--border-mid); border: 1px solid var(--border); position: relative; cursor: pointer; transition: background .2s; }
+    .toggle.on { background: var(--primary); border-color: var(--primary); }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: transform .2s; }
+    .toggle.on .toggle-thumb { transform: translateX(20px); }
+
+    /* Cards */
+    .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    .plan-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--card);
+      padding: 28px 24px;
+      position: relative;
+      transition: border-color .2s, transform .2s;
+    }
+    .plan-card:hover { transform: translateY(-2px); }
+    .plan-card.featured { border-color: var(--primary); background: var(--primary-dim); }
+    .plan-card.featured::before {
+      content: '🔥 En Popüler';
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      white-space: nowrap; padding: 4px 14px;
+      background: var(--primary); color: var(--bg);
+      border-radius: 99px; font-size: 11px; font-weight: 700;
+    }
+
+    .plan-name { font-size: 13px; font-weight: 600; color: var(--fg-muted); margin-bottom: 16px; }
+    .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px; }
+    .plan-amount { font-size: 40px; font-weight: 800; letter-spacing: -.04em; }
+    .plan-period { font-size: 14px; color: var(--fg-muted); }
+    .plan-billed { font-size: 12px; color: var(--fg-subtle); margin-bottom: 24px; min-height: 18px; }
+
+    .plan-cta {
+      width: 100%; padding: 11px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: opacity .2s; border: none; margin-bottom: 20px;
+    }
+    .plan-cta.primary { background: var(--fg); color: var(--bg); }
+    .plan-cta.primary:hover { opacity: .88; }
+    .plan-cta.outline { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+    .plan-cta.outline:hover { border-color: var(--border-mid); }
+
+    .plan-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .plan-features li { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--fg-muted); }
+    .feat-icon { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .feat-icon.yes { background: var(--primary-dim); color: var(--primary); }
+    .feat-icon.no  { background: oklch(0.19 0.009 260); color: var(--fg-subtle); }
+
+    /* FAQ */
+    .faq { margin-top: 72px; }
+    .faq-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 32px; }
+    .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: var(--fg-muted); line-height: 1.65; }
+
+    /* Bottom note */
+    .bottom-note { text-align: center; margin-top: 48px; font-size: 12px; color: var(--fg-subtle); }
+    .bottom-note a { color: var(--accent); }
+
+    @media (max-width: 768px) {
+      .plans { grid-template-columns: 1fr; }
+      .faq-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">crypto<strong>analyst</strong></a>
+      <a href="/" class="back-link">← Ana Sayfa</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <div class="hero-badge">⚡ Basit Fiyatlandırma</div>
+      <h1 class="hero-title">Doğru planı seçin</h1>
+      <p class="hero-sub">Ücretsiz başlayın, ihtiyaç duydukça yükseltin. Gizli ücret yok.</p>
+    </div>
+
+    <!-- Billing toggle -->
+    <div class="toggle-wrap">
+      <span class="toggle-label active" id="labelMonthly">Aylık</span>
+      <div class="toggle" id="billingToggle" onclick="toggleBilling()">
+        <div class="toggle-thumb"></div>
+      </div>
+      <span class="toggle-label" id="labelYearly">Yıllık</span>
+      <span class="save-badge">%33 İndirim</span>
+    </div>
+
+    <!-- Plan cards -->
+    <div class="plans">
+      <!-- Ücretsiz -->
+      <div class="plan-card">
+        <div class="plan-name">Ücretsiz</div>
+        <div class="plan-price">
+          <span class="plan-amount">$0</span>
+          <span class="plan-period">/ ay</span>
+        </div>
+        <div class="plan-billed">Kredi kartı gerekmez</div>
+        <button class="plan-cta outline" onclick="window.location.href='/'">Ücretsiz Başla</button>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="feat-icon yes">✓</span> Günde 2 AI analizi</li>
+          <li><span class="feat-icon yes">✓</span> 6 coin takibi</li>
+          <li><span class="feat-icon yes">✓</span> Günlük haber özeti</li>
+          <li><span class="feat-icon no">–</span> Sınırsız analiz</li>
+          <li><span class="feat-icon no">–</span> Detaylı teknik rapor</li>
+          <li><span class="feat-icon no">–</span> Öncelikli destek</li>
+        </ul>
+      </div>
+
+      <!-- VIP (featured) -->
+      <div class="plan-card featured">
+        <div class="plan-name">VIP</div>
+        <div class="plan-price">
+          <span class="plan-amount" id="vipPrice">$9.99</span>
+          <span class="plan-period">/ ay</span>
+        </div>
+        <div class="plan-billed" id="vipBilled">&nbsp;</div>
+        <button class="plan-cta primary" onclick="window.location.href='/?upgrade=1'">Hemen Başla</button>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="feat-icon yes">✓</span> <strong>Sınırsız</strong> AI analizi</li>
+          <li><span class="feat-icon yes">✓</span> 6 coin takibi</li>
+          <li><span class="feat-icon yes">✓</span> Günlük haber özeti</li>
+          <li><span class="feat-icon yes">✓</span> Detaylı teknik rapor</li>
+          <li><span class="feat-icon yes">✓</span> Signal + Risk + Güven skoru</li>
+          <li><span class="feat-icon yes">✓</span> Öncelikli destek</li>
+        </ul>
+      </div>
+
+      <!-- Kurumsal -->
+      <div class="plan-card">
+        <div class="plan-name">Kurumsal</div>
+        <div class="plan-price">
+          <span class="plan-amount">Özel</span>
+        </div>
+        <div class="plan-billed">Ekibinize özel çözüm</div>
+        <button class="plan-cta outline" onclick="window.location.href='mailto:destek@cryptoanalyst.com'">Bize Ulaşın</button>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="feat-icon yes">✓</span> Her şey VIP'te dahil</li>
+          <li><span class="feat-icon yes">✓</span> Özel API erişimi</li>
+          <li><span class="feat-icon yes">✓</span> Beyaz etiket seçeneği</li>
+          <li><span class="feat-icon yes">✓</span> SLA garantisi</li>
+          <li><span class="feat-icon yes">✓</span> Özel entegrasyon</li>
+          <li><span class="feat-icon yes">✓</span> Öncelikli destek</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq">
+      <h2 class="faq-title">Sık Sorulan Sorular</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-q">İptal edebilir miyim?</div>
+          <div class="faq-a">Evet, istediğiniz zaman iptal edebilirsiniz. İptal mevcut dönemin sonunda geçerli olur, kalan süre boyunca erişiminiz devam eder.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">İade politikası nedir?</div>
+          <div class="faq-a">İlk 7 gün içinde memnun kalmazsanız tam iade yapıyoruz. <a href="/legal/refund.html">İade politikamızı</a> inceleyin.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Hangi ödeme yöntemleri kabul ediliyor?</div>
+          <div class="faq-a">Visa, Mastercard, American Express ve Apple Pay ile ödeme yapabilirsiniz. Tüm ödemeler Paddle tarafından güvenle işlenir.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Analizler ne kadar güvenilir?</div>
+          <div class="faq-a">Analizler Claude AI tarafından piyasa verileri kullanılarak üretilir. Yatırım tavsiyesi değildir, karar destek aracı olarak kullanın.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-note">
+      🔒 Güvenli ödeme · Paddle ile şifrelendi ·
+      <a href="/legal/terms.html">Şartlar</a> ·
+      <a href="/legal/privacy.html">Gizlilik</a> ·
+      <a href="/legal/refund.html">İade</a>
+    </div>
+  </div>
+
+  <script>
+    let isYearly = false;
+    function toggleBilling() {
+      isYearly = !isYearly;
+      const toggle = document.getElementById('billingToggle');
+      toggle.classList.toggle('on', isYearly);
+      document.getElementById('labelMonthly').classList.toggle('active', !isYearly);
+      document.getElementById('labelYearly').classList.toggle('active', isYearly);
+      document.getElementById('vipPrice').textContent = isYearly ? '$6.67' : '$9.99';
+      document.getElementById('vipBilled').textContent = isYearly ? '$79.99/yıl olarak faturalanır' : ' ';
+    }
+    // Ana sayfadan upgrade=1 ile gelindiyse modal aç
+    if (new URLSearchParams(window.location.search).get('upgrade') === '1') {
+      window.location.href = '/?upgrade=1';
+    }
+  </script>
+</body>
+</html>
