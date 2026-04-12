@@ -660,7 +660,6 @@ window.onUserLogout = function() {
   ).join('');
 
   await Promise.all([fetchPrices(), loadStats(), loadReport()]);
-  loadNews();
   setInterval(fetchPrices, 60000);
   setInterval(loadStats, 120000);
 })();
