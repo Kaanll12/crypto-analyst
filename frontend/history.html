@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analiz Geçmişi — CryptoAnalyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/history.css"/>
+</head>
+<body>
+
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Analizler</a>
+      <a href="/news.html">Haberler</a>
+      <a href="/portfolio.html">Portföy</a>
+      <a href="/history.html" style="color:var(--accent)">Geçmiş</a>
+    </nav>
+    <div class="header-actions">
+      <div id="authArea" class="auth-btns">
+        <button class="btn-ghost" onclick="window.location.href='/'">Giriş Yap</button>
+      </div>
+      <div id="userArea" style="display:none" class="auth-btns">
+        <div class="user-chip" id="userBadge"></div>
+        <button class="btn-ghost" onclick="logout()">Çıkış</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<main class="hist-main">
+
+  <!-- Login gate -->
+  <div class="hist-gate" id="loginGate">
+    <div class="hist-gate-card">
+      <div class="hist-gate-icon">📈</div>
+      <h2>Analiz Geçmişi</h2>
+      <p>Tüm AI analizlerini, sinyal isabet oranlarını ve geçmiş performansı görmek için giriş yapın.</p>
+      <button class="btn-primary" onclick="window.location.href='/'">Ana Sayfaya Git & Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="hist-content" id="histContent" style="display:none">
+    <div class="container">
+
+      <!-- Page header -->
+      <div class="hist-page-header">
+        <div>
+          <h1 class="hist-title">Analiz Geçmişi</h1>
+          <p class="hist-sub">Tüm AI analizlerin ve sinyal performansın</p>
+        </div>
+        <button class="btn-ghost" onclick="loadHistory()" style="font-size:12px;gap:6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          Yenile
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="hist-stats" id="histStats">
+        <div class="hs-card">
+          <div class="hs-icon bullish">↑</div>
+          <div>
+            <div class="hs-num" id="statBullish">—</div>
+            <div class="hs-label">Bullish Sinyal</div>
+          </div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-icon bearish">↓</div>
+          <div>
+            <div class="hs-num" id="statBearish">—</div>
+            <div class="hs-label">Bearish Sinyal</div>
+          </div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-icon neutral">—</div>
+          <div>
+            <div class="hs-num" id="statNeutral">—</div>
+            <div class="hs-label">Neutral Sinyal</div>
+          </div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-icon primary">◈</div>
+          <div>
+            <div class="hs-num" id="statTotal">—</div>
+            <div class="hs-label">Toplam Analiz</div>
+          </div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-icon accent">%</div>
+          <div>
+            <div class="hs-num" id="statAvgConf">—</div>
+            <div class="hs-label">Ort. Güven Skoru</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="hist-filters">
+        <div class="hf-group">
+          <label class="hf-label">Coin</label>
+          <select class="form-input" id="filterCoin" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px">
+            <option value="all">Tümü</option>
+            <option value="BTC">Bitcoin (BTC)</option>
+            <option value="ETH">Ethereum (ETH)</option>
+            <option value="SOL">Solana (SOL)</option>
+            <option value="BNB">BNB</option>
+            <option value="XRP">XRP</option>
+            <option value="ADA">Cardano (ADA)</option>
+          </select>
+        </div>
+        <div class="hf-group">
+          <label class="hf-label">Sinyal</label>
+          <select class="form-input" id="filterSignal" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px">
+            <option value="all">Tümü</option>
+            <option value="bullish">Bullish</option>
+            <option value="bearish">Bearish</option>
+            <option value="neutral">Neutral</option>
+          </select>
+        </div>
+        <div class="hf-group">
+          <label class="hf-label">Zaman</label>
+          <select class="form-input" id="filterTime" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px">
+            <option value="all">Tümü</option>
+            <option value="today">Bugün</option>
+            <option value="week">Bu Hafta</option>
+            <option value="month">Bu Ay</option>
+          </select>
+        </div>
+        <div class="hf-count" id="filterCount"></div>
+      </div>
+
+      <!-- History list -->
+      <div id="histList" class="hist-list">
+        <div class="hist-loading">Analizler yükleniyor…</div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="hist-pagination" id="histPagination" style="display:none">
+        <button class="btn-ghost" id="prevBtn" onclick="changePage(-1)">← Önceki</button>
+        <span id="pageInfo" style="font-size:13px;color:var(--fg-muted)"></span>
+        <button class="btn-ghost" id="nextBtn" onclick="changePage(1)">Sonraki →</button>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Analysis Detail Modal -->
+<div class="modal-overlay" id="analysisModal" onclick="closeModal()">
+  <div class="modal analysis-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/history.js"></script>
+</body>
+</html>
