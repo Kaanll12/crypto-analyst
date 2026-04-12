@@ -1,0 +1,11 @@
+{
+  "name": "crypto-analyst",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "build": "cd backend && npm install --omit=dev"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
