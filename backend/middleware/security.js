@@ -3,41 +3,27 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 
-// ─── HELMET (HTTP güvenlik başlıkları) ─────────────────────────────────────
+// ─── HELMET ───────────────────────────────────────────────────────────────
+// CSP'yi tamamen kapatıyoruz — frontend inline onclick kullanıyor
 const helmetMiddleware = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
-      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-      imgSrc:     ["'self'", "data:", "https:"],
-      // localhost'taki tüm portlara izin ver (dev + prod)
-      connectSrc: ["'self'", "https://api.coingecko.com", "http://localhost:*", "ws://localhost:*"],
-    },
-  },
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 });
 
-// ─── CORS ──────────────────────────────────────────────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────────────────
 const corsMiddleware = cors({
   origin: (origin, callback) => {
-    // İzin verilen sabit origin'ler
-    const allowedExact = [
-      process.env.ALLOWED_ORIGIN,
-    ].filter(Boolean);
-
-    // Origin yoksa (curl, file://, Postman) veya localhost'sa — izin ver
     if (
       !origin ||
       origin === 'null' ||
-      /^http:\/\/localhost(:\d+)?$/.test(origin) ||
-      /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
-      allowedExact.includes(origin)
+      /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+      /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
+      /\.railway\.app$/.test(origin) ||
+      (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN)
     ) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: "${origin}" kaynağından erişim izni yok.`));
+      callback(new Error(`CORS: "${origin}" izinsiz.`));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -46,16 +32,15 @@ const corsMiddleware = cors({
   maxAge: 86400,
 });
 
-// ─── GENEL RATE LIMIT ──────────────────────────────────────────────────────
+// ─── RATE LIMIT ───────────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Çok fazla istek gönderildi. Lütfen bekleyin.' },
+  message: { error: 'Çok fazla istek. Lütfen bekleyin.' },
 });
 
-// ─── AUTH RATE LIMIT (brute-force koruması) ────────────────────────────────
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -63,14 +48,13 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
-// ─── ANALİZ RATE LIMIT ────────────────────────────────────────────────────
 const analysisLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  message: { error: 'Saatlik analiz limitine ulaştınız (20 analiz/saat).' },
+  message: { error: 'Saatlik analiz limitine ulaştınız.' },
 });
 
-// ─── XSS & SQL Injection temizleyici ──────────────────────────────────────
+// ─── SANITIZE ─────────────────────────────────────────────────────────────
 function sanitizeInput(req, _res, next) {
   const sanitize = (obj) => {
     if (typeof obj !== 'object' || obj === null) return obj;
@@ -90,13 +74,12 @@ function sanitizeInput(req, _res, next) {
     }
     return clean;
   };
-
   if (req.body)  req.body  = sanitize(req.body);
   if (req.query) req.query = sanitize(req.query);
   next();
 }
 
-// ─── API LOGGER ────────────────────────────────────────────────────────────
+// ─── API LOGGER ───────────────────────────────────────────────────────────
 function apiLogger(db) {
   return (req, res, next) => {
     const start = Date.now();
@@ -105,12 +88,7 @@ function apiLogger(db) {
         db.prepare(`
           INSERT INTO api_logs (endpoint, method, ip, user_id, status_code, duration_ms)
           VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-          req.path, req.method, req.ip,
-          req.user?.id || null,
-          res.statusCode,
-          Date.now() - start
-        );
+        `).run(req.path, req.method, req.ip, req.user?.id || null, res.statusCode, Date.now() - start);
       } catch (_) {}
     });
     next();
@@ -118,11 +96,7 @@ function apiLogger(db) {
 }
 
 module.exports = {
-  helmetMiddleware,
-  corsMiddleware,
-  generalLimiter,
-  authLimiter,
-  analysisLimiter,
-  sanitizeInput,
-  apiLogger,
+  helmetMiddleware, corsMiddleware,
+  generalLimiter, authLimiter, analysisLimiter,
+  sanitizeInput, apiLogger,
 };
