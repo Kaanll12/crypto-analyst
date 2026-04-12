@@ -98,6 +98,9 @@ function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
     CREATE INDEX IF NOT EXISTS idx_alerts_user ON price_alerts(user_id, is_active);
+
+    -- API LOG (güvenlik için)
+    CREATE TABLE IF NOT EXISTS api_logs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       endpoint    TEXT NOT NULL,
       method      TEXT NOT NULL,
