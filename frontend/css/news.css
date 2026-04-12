@@ -3,28 +3,31 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:          oklch(0.10 0.010 270);
-  --card:        oklch(0.14 0.015 270);
-  --card2:       oklch(0.17 0.018 270);
-  --fg:          oklch(0.95 0 0);
-  --fg-muted:    oklch(0.65 0.010 270);
-  --fg-subtle:   oklch(0.45 0.008 270);
-  --primary:     oklch(0.65 0.20 250);
-  --primary-dim: oklch(0.65 0.20 250 / 0.15);
-  --accent:      oklch(0.55 0.25 290);
-  --accent-dim:  oklch(0.55 0.25 290 / 0.12);
-  --border:      oklch(0.25 0.020 270);
-  --border-mid:  oklch(0.30 0.022 270);
-  --bullish:     oklch(0.70 0.20 145);
-  --bullish-dim: oklch(0.70 0.20 145 / 0.15);
-  --bullish-bdr: oklch(0.70 0.20 145 / 0.30);
+  /* Ana temayla birebir aynı renkler */
+  --bg:          oklch(0.09 0.005 260);
+  --card:        oklch(0.13 0.007 260);
+  --card2:       oklch(0.16 0.008 260);
+  --fg:          oklch(0.97 0 0);
+  --fg-muted:    oklch(0.62 0.01 260);
+  --fg-subtle:   oklch(0.42 0.01 260);
+  /* Accent: teal (hero_landing) */
+  --primary:     oklch(0.72 0.15 180);
+  --primary-dim: oklch(0.72 0.15 180 / 0.15);
+  --accent:      oklch(0.70 0.15 145);
+  --accent-dim:  oklch(0.70 0.15 145 / 0.12);
+  --border:      oklch(0.22 0.01 260);
+  --border-mid:  oklch(0.28 0.015 260);
+  /* Signal colours */
+  --bullish:     oklch(0.70 0.18 145);
+  --bullish-dim: oklch(0.70 0.18 145 / 0.12);
+  --bullish-bdr: oklch(0.70 0.18 145 / 0.30);
   --bearish:     oklch(0.65 0.22 25);
-  --bearish-dim: oklch(0.65 0.22 25 / 0.15);
+  --bearish-dim: oklch(0.65 0.22 25 / 0.12);
   --bearish-bdr: oklch(0.65 0.22 25 / 0.30);
-  --neutral:     oklch(0.65 0.15 250);
-  --neutral-dim: oklch(0.65 0.15 250 / 0.15);
-  --neutral-bdr: oklch(0.65 0.15 250 / 0.30);
-  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-2xl: 24px;
+  --neutral:     oklch(0.70 0.12 60);
+  --neutral-dim: oklch(0.70 0.12 60 / 0.12);
+  --neutral-bdr: oklch(0.70 0.12 60 / 0.30);
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px; --r-2xl: 24px;
   --font: 'Geist', -apple-system, sans-serif;
   --mono: 'Geist Mono', ui-monospace, monospace;
 }

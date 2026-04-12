@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portföy — CryptoAnalyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/portfolio.css"/>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════════════ -->
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Analizler</a>
+      <a href="/news.html">Haberler</a>
+      <a href="/portfolio.html" style="color:var(--accent)">Portföy</a>
+    </nav>
+    <div class="header-actions">
+      <div id="authArea" class="auth-btns">
+        <button class="btn-ghost" onclick="window.location.href='/'">Giriş Yap</button>
+      </div>
+      <div id="userArea" style="display:none" class="auth-btns">
+        <div class="user-chip" id="userBadge"></div>
+        <button class="btn-ghost" onclick="logout()">Çıkış</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ═══ ANA İÇERİK ════════════════════════════════════════════════════════ -->
+<main class="pf-main" id="mainContent">
+
+  <!-- Giriş yapılmamış durumu -->
+  <div class="pf-login-gate" id="loginGate">
+    <div class="pf-login-card">
+      <div class="pf-login-icon">📊</div>
+      <h2>Portföy Takipçisi</h2>
+      <p>Kripto portföyünü takip etmek ve kar/zarar hesaplamak için giriş yapın.</p>
+      <button class="btn-primary" onclick="window.location.href='/'">Ana Sayfaya Git & Giriş Yap</button>
+    </div>
+  </div>
+
+  <!-- Portföy içeriği -->
+  <div class="pf-content" id="pfContent" style="display:none">
+    <div class="container">
+
+      <!-- Özet kartlar -->
+      <div class="pf-summary" id="pfSummary">
+        <div class="summary-card total-value">
+          <div class="sc-label">Toplam Değer</div>
+          <div class="sc-value" id="scTotalValue">—</div>
+          <div class="sc-sub" id="scTotalSub">Yükleniyor…</div>
+        </div>
+        <div class="summary-card invested">
+          <div class="sc-label">Toplam Yatırım</div>
+          <div class="sc-value" id="scInvested">—</div>
+          <div class="sc-sub">Maliyet bazı</div>
+        </div>
+        <div class="summary-card pnl" id="scPnlCard">
+          <div class="sc-label">Kar / Zarar</div>
+          <div class="sc-value" id="scPnl">—</div>
+          <div class="sc-sub" id="scPnlPct">—</div>
+        </div>
+        <div class="summary-card positions">
+          <div class="sc-label">Pozisyon</div>
+          <div class="sc-value" id="scPositions">—</div>
+          <div class="sc-sub">Farklı coin</div>
+        </div>
+      </div>
+
+      <div class="pf-grid">
+
+        <!-- Sol: Coin dağılımı & pozisyonlar -->
+        <div class="pf-left">
+
+          <!-- Coin kartları -->
+          <div class="pf-section-header">
+            <h2 class="pf-section-title">Coinlerim</h2>
+            <button class="btn-ghost" style="font-size:12px" onclick="refreshPortfolio()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              Yenile
+            </button>
+          </div>
+
+          <div id="coinCards" class="coin-cards">
+            <div class="pf-loading">Portföy yükleniyor…</div>
+          </div>
+
+          <!-- Pozisyon listesi -->
+          <div class="pf-section-header" style="margin-top:28px">
+            <h2 class="pf-section-title">Tüm Pozisyonlar</h2>
+          </div>
+          <div id="positionList" class="position-list">
+            <div class="pf-loading">Yükleniyor…</div>
+          </div>
+        </div>
+
+        <!-- Sağ: Ekle + Alarmlar -->
+        <div class="pf-right">
+
+          <!-- Pozisyon Ekle -->
+          <div class="pf-card" id="addCard">
+            <div class="pf-card-header">
+              <h3>Pozisyon Ekle</h3>
+            </div>
+            <div class="pf-card-body">
+              <div class="form-group">
+                <label class="form-label">Coin</label>
+                <select class="form-input" id="addCoin">
+                  <option value="bitcoin">Bitcoin (BTC)</option>
+                  <option value="ethereum">Ethereum (ETH)</option>
+                  <option value="solana">Solana (SOL)</option>
+                  <option value="binancecoin">BNB</option>
+                  <option value="ripple">XRP</option>
+                  <option value="cardano">Cardano (ADA)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Miktar</label>
+                <input class="form-input" type="number" id="addAmount" placeholder="0.5" step="any" min="0"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Alım Fiyatı (USD)</label>
+                <input class="form-input" type="number" id="addBuyPrice" placeholder="95000" step="any" min="0"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Alım Tarihi</label>
+                <input class="form-input" type="date" id="addBuyDate"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Not <span style="color:var(--fg-subtle);font-weight:400">(opsiyonel)</span></label>
+                <input class="form-input" type="text" id="addNotes" placeholder="Uzun vadeli hodl"/>
+              </div>
+              <button class="btn-primary full" onclick="addPosition()" id="addBtn">
+                Pozisyon Ekle
+              </button>
+            </div>
+          </div>
+
+          <!-- Fiyat Alarmları -->
+          <div class="pf-card" style="margin-top:16px">
+            <div class="pf-card-header">
+              <h3>🔔 Fiyat Alarmları</h3>
+              <span class="alert-count" id="alertCount">0</span>
+            </div>
+            <div class="pf-card-body">
+              <div class="alert-form">
+                <select class="form-input" id="alertCoin" style="margin-bottom:8px">
+                  <option value="bitcoin|BTC">Bitcoin (BTC)</option>
+                  <option value="ethereum|ETH">Ethereum (ETH)</option>
+                  <option value="solana|SOL">Solana (SOL)</option>
+                  <option value="binancecoin|BNB">BNB</option>
+                  <option value="ripple|XRP">XRP</option>
+                  <option value="cardano|ADA">Cardano (ADA)</option>
+                </select>
+                <div class="alert-row">
+                  <select class="form-input" id="alertCondition" style="flex:1">
+                    <option value="above">Üzerine çıkınca</option>
+                    <option value="below">Altına düşünce</option>
+                  </select>
+                  <input class="form-input" type="number" id="alertPrice" placeholder="$90,000" step="any" style="flex:1"/>
+                </div>
+                <button class="btn-primary full" onclick="addAlert()" style="margin-top:8px">
+                  Alarm Kur
+                </button>
+              </div>
+
+              <div id="alertList" class="alert-list" style="margin-top:12px">
+                <div class="pf-loading small">Alarmlar yükleniyor…</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/portfolio.js"></script>
+</body>
+</html>

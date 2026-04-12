@@ -16,6 +16,8 @@ const analysisRoutes = require('./routes/analysis');
 const reportRoutes   = require('./routes/reports');
 const newsRoutes     = require('./routes/news');
 const paymentRoutes  = require('./routes/payments');
+const portfolioRoutes = require('./routes/portfolio');
+const alertRoutes    = require('./routes/alerts');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -40,6 +42,8 @@ app.use('/api/analyses', analysisRoutes);
 app.use('/api/reports',  reportRoutes);
 app.use('/api/news',     newsRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/alerts',   alertRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

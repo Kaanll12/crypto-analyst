@@ -68,8 +68,36 @@ function initDatabase() {
       created_at  TEXT DEFAULT (datetime('now'))
     );
 
-    -- API LOG (güvenlik için)
-    CREATE TABLE IF NOT EXISTS api_logs (
+    -- PORTFÖY
+    CREATE TABLE IF NOT EXISTS portfolio (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      coin_id     TEXT NOT NULL,
+      coin_sym    TEXT NOT NULL,
+      coin_name   TEXT NOT NULL,
+      amount      REAL NOT NULL,
+      buy_price   REAL NOT NULL,
+      buy_date    TEXT NOT NULL,
+      notes       TEXT,
+      created_at  TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_portfolio_user ON portfolio(user_id);
+
+    -- FİYAT ALARMLARI
+    CREATE TABLE IF NOT EXISTS price_alerts (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      coin_id     TEXT NOT NULL,
+      coin_sym    TEXT NOT NULL,
+      condition   TEXT NOT NULL CHECK(condition IN ('above','below')),
+      target_price REAL NOT NULL,
+      is_active   INTEGER DEFAULT 1,
+      triggered_at TEXT,
+      created_at  TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_alerts_user ON price_alerts(user_id, is_active);
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       endpoint    TEXT NOT NULL,
       method      TEXT NOT NULL,
