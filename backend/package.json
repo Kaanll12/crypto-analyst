@@ -21,8 +21,7 @@
     "dotenv": "^16.3.1",
     "morgan": "^1.10.0",
     "uuid": "^9.0.0",
-    "@anthropic-ai/sdk": "^0.20.0",
-    "stripe": "^14.0.0"
+    "@anthropic-ai/sdk": "^0.20.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
