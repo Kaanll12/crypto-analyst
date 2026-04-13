@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /portfolio.html
+Disallow: /history.html
+
+# Sitemap
+Sitemap: https://crypto-analyst.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10

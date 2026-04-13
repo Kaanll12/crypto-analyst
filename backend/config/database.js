@@ -99,6 +99,24 @@ function initDatabase() {
     );
     CREATE INDEX IF NOT EXISTS idx_alerts_user ON price_alerts(user_id, is_active);
 
+    -- PUSH BİLDİRİM ABONELİKLERİ
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     TEXT NOT NULL,
+      endpoint    TEXT UNIQUE NOT NULL,
+      p256dh      TEXT NOT NULL DEFAULT '',
+      auth        TEXT NOT NULL DEFAULT '',
+      created_at  TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
+
+    -- UYGULAMA AYARLARI (key-value)
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     -- API LOG (güvenlik için)
     CREATE TABLE IF NOT EXISTS api_logs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,

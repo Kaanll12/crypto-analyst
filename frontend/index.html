@@ -3,12 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crypto Analyst — AI Destekli Kripto Analiz</title>
-  <meta name="description" content="Yapay zeka destekli günlük kripto para analizleri. Bitcoin, Ethereum, Solana ve daha fazlası için güncel yorumlar." />
-  <meta name="keywords" content="kripto analiz, bitcoin yorum, ethereum analiz, coin tahmin, kripto haber" />
-  <meta property="og:title" content="Crypto Analyst" />
-  <meta property="og:description" content="AI destekli günlük kripto analiz platformu" />
-  <meta property="og:type" content="website" />
+  <title>Crypto Analyst — AI Destekli Kripto Analiz | Bitcoin, Ethereum, Solana</title>
+  <meta name="description" content="Yapay zeka destekli günlük kripto para analizleri. Bitcoin, Ethereum, Solana, BNB, XRP ve Cardano için anlık AI yorumları, teknik analiz ve piyasa öngörüleri." />
+  <meta name="keywords" content="kripto analiz, bitcoin analiz, ethereum yorum, solana analiz, coin tahmin, kripto haber, AI kripto, BNB analiz, XRP yorum, kripto para" />
+  <meta name="author" content="Crypto Analyst" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://crypto-analyst.app/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://crypto-analyst.app/" />
+  <meta property="og:title"       content="Crypto Analyst — AI Destekli Kripto Analiz" />
+  <meta property="og:description" content="Yapay zeka ile Bitcoin, Ethereum ve popüler kripto paraları analiz et. Günlük sinyal, teknik analiz ve piyasa yorumları." />
+  <meta property="og:image"       content="https://crypto-analyst.app/og-image.png" />
+  <meta property="og:locale"      content="tr_TR" />
+  <meta property="og:site_name"   content="Crypto Analyst" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:url"         content="https://crypto-analyst.app/" />
+  <meta name="twitter:title"       content="Crypto Analyst — AI Kripto Analiz" />
+  <meta name="twitter:description" content="Bitcoin, Ethereum ve daha fazlası için AI destekli günlük analiz ve sinyaller." />
+  <meta name="twitter:image"       content="https://crypto-analyst.app/og-image.png" />
+
+  <!-- PWA / Theme -->
+  <meta name="theme-color" content="#1A56DB" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CryptoAnalyst" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Crypto Analyst",
+    "url": "https://crypto-analyst.app",
+    "description": "Yapay zeka destekli kripto para analiz platformu",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "tr",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -245,10 +290,15 @@
                 </div>
               </div>
             </div>
-            <button class="btn-refresh" id="refreshBtn" onclick="generateAnalysis()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-              Yenile
-            </button>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <button class="btn-ghost btn-sm" id="shareCardBtn" onclick="onShareCard()" title="Paylaşım kartı oluştur" style="display:none">
+                🎴
+              </button>
+              <button class="btn-refresh" id="refreshBtn" onclick="generateAnalysis()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Yenile
+              </button>
+            </div>
           </div>
 
           <!-- Metric cards grid (AI_ResultPanel design) -->
@@ -630,8 +680,47 @@
 </div>
 
 <script src="js/api.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script src="js/payments.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/sharecard.js"></script>
+
+<!-- Paylaşım Kartı Tetikleyici -->
+<script>
+function onShareCard() {
+  if (!window.currentAnalysis) return;
+  const d = window.currentAnalysis;
+  const coinData = window.prices?.[window.selected?.id] || {};
+  window.shareCard?.share({
+    coinId:     d.coin_id     || window.selected?.id,
+    coinSym:    d.coin_sym    || window.selected?.sym,
+    coinName:   d.coin_name   || window.selected?.name,
+    priceUsd:   d.price_usd   || coinData.current_price,
+    change24h:  d.change_24h  || coinData.price_change_percentage_24h,
+    signal:     d.signal,
+    confidence: d.confidence,
+    content:    d.content,
+    date:       d.created_at ? new Date(d.created_at).toLocaleDateString('tr-TR') : null,
+  });
+}
+// Paylaş butonunu analiz yüklenince göster
+document.addEventListener('analysisLoaded', function() {
+  const btn = document.getElementById('shareCardBtn');
+  if (btn) btn.style.display = '';
+});
+</script>
+
+<!-- PWA Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[SW] Kayıtlı:', reg.scope))
+      .catch(err => console.warn('[SW] Kayıt hatası:', err));
+  });
+}
+</script>
 </body>
 </html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coin Karşılaştırma — Crypto Analyst</title>
+  <meta name="description" content="İki kripto parayı yapay zeka ile karşılaştır. Hangi coin daha iyi fırsat sunuyor? AI destekli yan yana analiz." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://crypto-analyst.app/compare.html" />
+  <meta property="og:title" content="Coin Karşılaştırma — Crypto Analyst" />
+  <meta property="og:description" content="İki kripto parayı AI ile karşılaştır." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#1A56DB" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Compare-specific styles ── */
+    .compare-hero {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+    }
+    .compare-hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .5rem;
+    }
+    .compare-hero p { color: var(--fg-muted); font-size: .95rem; }
+
+    .compare-selectors {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: end;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+    }
+    .vs-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: .85rem;
+      margin-bottom: 2px;
+    }
+    .coin-selector label {
+      display: block;
+      font-size: .8rem;
+      color: var(--fg-muted);
+      margin-bottom: .4rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .coin-selector select {
+      width: 100%;
+      padding: .6rem .9rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-md);
+      color: var(--fg);
+      font-size: .95rem;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2399a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .8rem center;
+      padding-right: 2rem;
+    }
+    .compare-btn-wrap { text-align: center; margin-bottom: 2rem; }
+
+    /* ── Result grid ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1rem 3rem;
+    }
+    @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.5rem;
+      position: relative;
+    }
+    .compare-card.winner {
+      border-color: var(--bullish);
+      box-shadow: 0 0 20px var(--bullish-dim);
+    }
+    .winner-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bullish);
+      color: #000;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .compare-coin-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1.25rem;
+    }
+    .compare-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .compare-coin-name { font-weight: 700; font-size: 1.05rem; }
+    .compare-coin-sym  { color: var(--fg-muted); font-size: .85rem; font-family: var(--mono); }
+    .compare-price {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: var(--mono);
+      margin-bottom: .25rem;
+    }
+    .compare-change {
+      font-size: .85rem;
+      font-weight: 600;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    .compare-change.pos { background: var(--bullish-dim); color: var(--bullish); }
+    .compare-change.neg { background: var(--bearish-dim); color: var(--bearish); }
+
+    .compare-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+      margin-bottom: 1.25rem;
+    }
+    .metric-item {
+      background: var(--bg-card-2);
+      border-radius: var(--r-sm);
+      padding: .5rem .75rem;
+    }
+    .metric-label { font-size: .7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .2rem; }
+    .metric-value { font-size: .9rem; font-weight: 600; font-family: var(--mono); }
+
+    .signal-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .signal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .signal-dot.bullish { background: var(--bullish); }
+    .signal-dot.bearish { background: var(--bearish); }
+    .signal-dot.neutral { background: var(--neutral); }
+    .signal-text { font-weight: 600; font-size: .9rem; }
+    .confidence-bar-wrap { margin-bottom: 1rem; }
+    .confidence-label { font-size: .75rem; color: var(--fg-muted); margin-bottom: .3rem; }
+    .confidence-bar {
+      height: 4px;
+      background: var(--bg-secondary);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+    .confidence-fill.bullish { background: var(--bullish); }
+    .confidence-fill.bearish { background: var(--bearish); }
+    .confidence-fill.neutral { background: var(--neutral); }
+
+    .compare-analysis { font-size: .875rem; line-height: 1.7; color: var(--fg-muted); }
+    .compare-analysis h2, .compare-analysis h3 {
+      font-size: .9rem; color: var(--fg); margin: .8rem 0 .3rem;
+    }
+
+    /* ── Verdict ── */
+    .compare-verdict {
+      max-width: 700px;
+      margin: 0 auto 3rem;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: var(--r-lg);
+      text-align: center;
+    }
+    .compare-verdict h2 { font-size: 1rem; margin-bottom: .6rem; color: var(--accent); }
+    .verdict-text { font-size: .9rem; color: var(--fg-muted); line-height: 1.7; }
+
+    /* ── Loading skeleton ── */
+    .compare-skeleton .skeleton-line {
+      height: 14px;
+      background: linear-gradient(90deg, var(--bg-card-2) 25%, var(--bg-secondary) 50%, var(--bg-card-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: .6rem;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    @media (max-width: 500px) {
+      .compare-selectors { grid-template-columns: 1fr; }
+      .vs-badge { margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Analizler</a>
+      <a href="/news.html">Haberler</a>
+      <a href="/portfolio.html">Portföy</a>
+      <a href="/history.html">Geçmiş</a>
+      <a href="/compare.html" class="active">Karşılaştır</a>
+    </nav>
+    <div class="header-actions">
+      <div class="market-pill"><span class="market-dot"></span><span>Canlı</span></div>
+      <div id="authArea" class="auth-btns">
+        <button class="btn-ghost" id="loginNavBtn">Giriş</button>
+      </div>
+      <div id="userArea" style="display:none" class="auth-btns">
+        <div class="user-chip" id="userBadge"></div>
+        <button class="btn-ghost btn-sm" id="logoutBtn">Çıkış</button>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menü">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="page-container" style="padding-top:80px">
+
+  <div class="compare-hero">
+    <h1>🔀 Coin Karşılaştırma</h1>
+    <p>İki kripto parayı yapay zeka ile yan yana analiz et — hangisi daha iyi fırsat?</p>
+  </div>
+
+  <div class="compare-selectors">
+    <div class="coin-selector">
+      <label>1. Coin</label>
+      <select id="coin1Select">
+        <option value="bitcoin|BTC|Bitcoin">Bitcoin (BTC)</option>
+        <option value="ethereum|ETH|Ethereum">Ethereum (ETH)</option>
+        <option value="solana|SOL|Solana">Solana (SOL)</option>
+        <option value="binancecoin|BNB|BNB">BNB</option>
+        <option value="ripple|XRP|XRP">XRP</option>
+        <option value="cardano|ADA|Cardano">Cardano (ADA)</option>
+      </select>
+    </div>
+
+    <div class="vs-badge">VS</div>
+
+    <div class="coin-selector">
+      <label>2. Coin</label>
+      <select id="coin2Select">
+        <option value="ethereum|ETH|Ethereum">Ethereum (ETH)</option>
+        <option value="bitcoin|BTC|Bitcoin">Bitcoin (BTC)</option>
+        <option value="solana|SOL|Solana">Solana (SOL)</option>
+        <option value="binancecoin|BNB|BNB">BNB</option>
+        <option value="ripple|XRP|XRP">XRP</option>
+        <option value="cardano|ADA|Cardano">Cardano (ADA)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="compare-btn-wrap">
+    <button class="btn-primary" id="compareBtn" onclick="startCompare()">
+      ⚡ Karşılaştır
+    </button>
+    <p style="margin-top:.6rem;font-size:.8rem;color:var(--fg-muted)">
+      Her karşılaştırma 2 analiz hakkı kullanır
+    </p>
+  </div>
+
+  <div id="compareResult" style="display:none">
+    <div class="compare-grid" id="compareGrid"></div>
+    <div class="compare-verdict" id="compareVerdict"></div>
+  </div>
+
+</main>
+
+<footer style="text-align:center;padding:2rem;color:var(--fg-muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:2rem">
+  <p>© 2025 CryptoAnalyst — Yapay zeka analizleri yatırım tavsiyesi değildir.</p>
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/compare.js"></script>
+<script>
+  // Auth UI
+  document.addEventListener('authStateChanged', function(e) {
+    const u = e.detail;
+    if (u) {
+      document.getElementById('authArea').style.display = 'none';
+      document.getElementById('userArea').style.display = 'flex';
+      document.getElementById('userBadge').textContent = u.username?.[0]?.toUpperCase() || '?';
+    } else {
+      document.getElementById('authArea').style.display = 'flex';
+      document.getElementById('userArea').style.display = 'none';
+    }
+  });
+  document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    window.logout?.();
+    window.location.href = '/';
+  });
+</script>
+</body>
+</html>

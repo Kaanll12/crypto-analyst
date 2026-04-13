@@ -4,9 +4,22 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 
 // ─── HELMET ───────────────────────────────────────────────────────────────
-// CSP'yi tamamen kapatıyoruz — frontend inline onclick kullanıyor
+// Temel CSP: API rotaları için koruma sağlar.
+// Frontend HTML inline onclick içerdiğinden yalnızca API katmanında uygulanır.
 const helmetMiddleware = helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'self'"],
+      scriptSrc:      ["'self'", "'unsafe-inline'", 'cdn.paddle.com', 'fonts.googleapis.com'],
+      styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'fonts.gstatic.com'],
+      fontSrc:        ["'self'", 'fonts.gstatic.com'],
+      imgSrc:         ["'self'", 'data:', 'https:'],
+      connectSrc:     ["'self'", 'api.coingecko.com', 'sandbox-api.paddle.com', 'api.paddle.com'],
+      frameSrc:       ["'self'", 'paddle.com', '*.paddle.com'],
+      objectSrc:      ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 });
 

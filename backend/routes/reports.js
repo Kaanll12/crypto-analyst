@@ -15,7 +15,15 @@ router.get('/', (req, res) => {
   res.json({ data: reports });
 });
 
-// Tek rapor
+// Bugünün raporu (özel rota — /:date'ten ÖNCE tanımlanmalı)
+router.get('/today', (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const report = db.prepare('SELECT * FROM daily_reports WHERE report_date = ?').get(today);
+  if (!report) return res.status(404).json({ error: 'Bugün için rapor henüz oluşturulmamış.' });
+  res.json({ data: report });
+});
+
+// Tek rapor (tarih bazlı)
 router.get('/:date', (req, res) => {
   const report = db.prepare('SELECT * FROM daily_reports WHERE report_date = ?').get(req.params.date);
   if (!report) return res.status(404).json({ error: 'Rapor bulunamadı.' });

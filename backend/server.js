@@ -18,6 +18,8 @@ const newsRoutes     = require('./routes/news');
 const paymentRoutes  = require('./routes/payments');
 const portfolioRoutes = require('./routes/portfolio');
 const alertRoutes    = require('./routes/alerts');
+const notifyRoutes   = require('./routes/notifications');
+const emailRoutes    = require('./routes/email');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -43,7 +45,9 @@ app.use('/api/reports',  reportRoutes);
 app.use('/api/news',     newsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/alerts',   alertRoutes);
+app.use('/api/alerts',        alertRoutes);
+app.use('/api/notifications', notifyRoutes);
+app.use('/api/email',         emailRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -55,15 +59,22 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// ─── FRONTEND (production) ────────────────────────────────────────────────
-if (process.env.NODE_ENV === 'production') {
+// ─── FRONTEND (her ortamda static serve) ──────────────────────────────────
+{
   const frontendPath = process.env.FRONTEND_PATH
     || path.join(__dirname, '..', 'frontend');
 
   app.use(express.static(frontendPath));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  });
+
+  // SEO: sitemap & robots her ortamda servis edilsin
+  app.get('/sitemap.xml', (_req, res) => res.sendFile(path.join(frontendPath, 'sitemap.xml')));
+  app.get('/robots.txt',  (_req, res) => res.sendFile(path.join(frontendPath, 'robots.txt')));
+
+  if (process.env.NODE_ENV === 'production') {
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    });
+  }
 }
 
 // ─── HATA YÖNETİMİ ───────────────────────────────────────────────────────

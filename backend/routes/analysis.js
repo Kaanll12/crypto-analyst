@@ -270,6 +270,156 @@ Profesyonel, güvenilir ve cesur ol. Belirsiz ifadelerden kaçın.`,
   }
 );
 
+// ─── COIN KARŞILAŞTIRMA ──────────────────────────────────────────────────
+router.post('/compare',
+  authenticate,
+  analysisLimiter,
+  [
+    body('coin1.coinId').isIn(VALID_COINS),
+    body('coin1.coinSym').isLength({ min: 2, max: 10 }),
+    body('coin1.coinName').isLength({ min: 2, max: 50 }),
+    body('coin2.coinId').isIn(VALID_COINS),
+    body('coin2.coinSym').isLength({ min: 2, max: 10 }),
+    body('coin2.coinName').isLength({ min: 2, max: 50 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+    if (req.body.coin1.coinId === req.body.coin2.coinId)
+      return res.status(400).json({ error: 'Farklı iki coin seçin.' });
+
+    // Kullanım limiti — karşılaştırma 2 analiz sayar
+    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(req.user.id);
+    const role = user?.role || 'user';
+    const usageCheck = db.checkUsageLimit(req.user.id, role);
+
+    if (!usageCheck.allowed || (isFinite(usageCheck.limit) && usageCheck.used + 1 >= usageCheck.limit)) {
+      return res.status(429).json({
+        error: 'Karşılaştırma için yeterli analiz hakkınız yok (2 hak gerekir).',
+        code: 'DAILY_LIMIT_EXCEEDED',
+      });
+    }
+
+    const { coin1, coin2 } = req.body;
+    const dateStr = new Date().toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    function buildCoinContext(c) {
+      return `- Coin: ${c.coinName} (${c.coinSym})
+- Fiyat: $${c.priceUsd?.toLocaleString() || 'N/A'}
+- 24s değişim: ${(c.change24h || 0).toFixed(2)}%
+- Hacim: ${c.volume24h ? '$' + (c.volume24h / 1e9).toFixed(2) + 'B' : 'N/A'}
+- Piyasa değeri: ${c.marketCap ? '$' + (c.marketCap / 1e9).toFixed(1) + 'B' : 'N/A'}`;
+    }
+
+    try {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      // İki analizi paralel oluştur
+      const [msg1, msg2] = await Promise.all([
+        client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 900,
+          system: 'Sen CryptoAnalyst platformunun baş analisti ve kripto para uzmanısın. Kısa, somut ve karşılaştırmaya uygun analizler üretirsin.',
+          messages: [{ role: 'user', content:
+`${coin1.coinName} (${coin1.coinSym}) için ${dateStr} tarihli KISA analiz yaz. Karşılaştırma amacıyla yazıyorsun.
+
+${buildCoinContext(coin1)}
+
+## ÖNEMLİ: Yanıtının EN BAŞINA JSON bloğu ekle:
+\`\`\`json
+{"signal":"bullish|bearish|neutral","confidence":0-100,"risk_level":"low|medium|high"}
+\`\`\`
+
+Sonra şu bölümleri Türkçe yaz (her biri 2-3 cümle):
+### 📊 Teknik Görünüm
+### ⚡ Kısa Vadeli Beklenti
+### 🎯 Yatırımcı Notu` }],
+        }),
+        client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 900,
+          system: 'Sen CryptoAnalyst platformunun baş analisti ve kripto para uzmanısın. Kısa, somut ve karşılaştırmaya uygun analizler üretirsin.',
+          messages: [{ role: 'user', content:
+`${coin2.coinName} (${coin2.coinSym}) için ${dateStr} tarihli KISA analiz yaz. Karşılaştırma amacıyla yazıyorsun.
+
+${buildCoinContext(coin2)}
+
+## ÖNEMLİ: Yanıtının EN BAŞINA JSON bloğu ekle:
+\`\`\`json
+{"signal":"bullish|bearish|neutral","confidence":0-100,"risk_level":"low|medium|high"}
+\`\`\`
+
+Sonra şu bölümleri Türkçe yaz (her biri 2-3 cümle):
+### 📊 Teknik Görünüm
+### ⚡ Kısa Vadeli Beklenti
+### 🎯 Yatırımcı Notu` }],
+        }),
+      ]);
+
+      function parseAnalysis(msg, coinData) {
+        const raw = msg.content[0].text;
+        let signal = 'neutral', confidence = 50, risk_level = 'medium';
+        const m = raw.match(/```json\s*([\s\S]*?)```/);
+        if (m) {
+          try {
+            const p = JSON.parse(m[1]);
+            signal = p.signal || 'neutral';
+            confidence = p.confidence || 50;
+            risk_level = p.risk_level || 'medium';
+          } catch (_) {}
+        }
+        const content = raw.replace(/```json[\s\S]*?```\n?/, '').trim();
+        return { signal, confidence, risk_level, content };
+      }
+
+      const analysis1 = parseAnalysis(msg1, coin1);
+      const analysis2 = parseAnalysis(msg2, coin2);
+
+      // İkisini de DB'ye kaydet
+      const id1 = uuidv4();
+      const id2 = uuidv4();
+      db.prepare(`INSERT INTO analyses (id,coin_id,coin_sym,coin_name,price_usd,change_24h,content,signal,confidence,risk_level,created_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(id1, coin1.coinId, coin1.coinSym, coin1.coinName, coin1.priceUsd||null, coin1.change24h||null,
+             analysis1.content, analysis1.signal, analysis1.confidence, analysis1.risk_level, req.user.id);
+      db.prepare(`INSERT INTO analyses (id,coin_id,coin_sym,coin_name,price_usd,change_24h,content,signal,confidence,risk_level,created_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(id2, coin2.coinId, coin2.coinSym, coin2.coinName, coin2.priceUsd||null, coin2.change24h||null,
+             analysis2.content, analysis2.signal, analysis2.confidence, analysis2.risk_level, req.user.id);
+
+      // Kullanımı 2 artır
+      db.incrementUsage(req.user.id);
+      db.incrementUsage(req.user.id);
+
+      // Karar metni oluştur
+      const verdictMsg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system: 'Kripto para uzmanısın. Kısa ve net karar ver.',
+        messages: [{ role: 'user', content:
+`${coin1.coinName} (${coin1.coinSym}) vs ${coin2.coinName} (${coin2.coinSym}) karşılaştırması:
+
+${coin1.coinName}: Sinyal=${analysis1.signal}, Güven=%${analysis1.confidence}, Risk=${analysis1.risk_level}
+${coin2.coinName}: Sinyal=${analysis2.signal}, Güven=%${analysis2.confidence}, Risk=${analysis2.risk_level}
+
+Bu iki coinden hangisi şu an daha iyi fırsat sunuyor? 2-3 cümle ile somut, net karar ver. Türkçe yaz.`
+        }],
+      });
+
+      res.json({
+        analysis1: { ...analysis1, coinSym: coin1.coinSym, coinName: coin1.coinName },
+        analysis2: { ...analysis2, coinSym: coin2.coinSym, coinName: coin2.coinName },
+        verdict: verdictMsg.content[0].text,
+      });
+
+    } catch (err) {
+      console.error('Compare error:', err);
+      res.status(500).json({ error: 'Karşılaştırma analizi oluşturulamadı.' });
+    }
+  }
+);
+
 // ─── ANALİZ SİL (sadece admin) ────────────────────────────────────────────
 router.delete('/:id', authenticate, [param('id').isUUID()], (req, res) => {
   const errors = validationResult(req);

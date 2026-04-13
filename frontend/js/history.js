@@ -1,8 +1,9 @@
 // js/history.js — Analiz Geçmişi
 'use strict';
 
-const COIN_AVATARS = { BTC:'₿', ETH:'Ξ', SOL:'◎', XRP:'✕', ADA:'₳', BNB:'⬡' };
-const COIN_COLORS  = { BTC:'#F7931A', ETH:'#627EEA', SOL:'#9945FF', XRP:'#00AAE4', ADA:'#3468D1', BNB:'#F3BA2F' };
+// COIN_AVATARS, COIN_COLORS, toast, escHtml, formatMarkdown → utils.js'den geliyor
+var COIN_AVATARS = window.COIN_AVATARS;
+var COIN_COLORS  = window.COIN_COLORS;
 const SIG_LABELS   = { bullish:'Bullish', bearish:'Bearish', neutral:'Neutral' };
 const RISK_LABELS  = { low:'Düşük', medium:'Orta', high:'Yüksek' };
 
@@ -11,18 +12,9 @@ let filteredList   = [];
 let currentPage    = 1;
 const PAGE_SIZE    = 10;
 
-// ─── TOAST ────────────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const icons = { success:'✓', error:'✕', info:'◈' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 3800);
-}
-
 // ─── FORMAT ───────────────────────────────────────────────────────────────
-function fmt(n, dec = 2) {
+function fmt(n, dec) {
+  dec = (dec !== undefined) ? dec : 2;
   if (!n && n !== 0) return '—';
   return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
@@ -180,9 +172,8 @@ function renderCard(a, index) {
   </div>`;
 }
 
-function escHtml(str) {
-  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// escHtml → utils.js'den geliyor (window.escHtml)
+var escHtml = window.escHtml;
 
 // ─── ANALYSIS MODAL ───────────────────────────────────────────────────────
 window.openAnalysis = function(index) {
@@ -246,17 +237,8 @@ window.closeModal = function() {
   document.body.style.overflow = '';
 };
 
-function formatContent(text) {
-  return text
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,  '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm,   '<h3>$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>').replace(/$/, '</p>')
-    .replace(/<p><h3>/g, '<h3>').replace(/<\/h3><\/p>/g, '</h3>');
-}
+// formatContent → utils.js'deki window.formatMarkdown kullanılıyor
+var formatContent = window.formatMarkdown;
 
 // ─── AUTH HOOKS ───────────────────────────────────────────────────────────
 window.onUserLogin = function(user) {

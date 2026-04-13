@@ -48,15 +48,25 @@ router.get('/plans', (_req, res) => {
 router.post('/webhook', express.json(), async (req, res) => {
   const secret = process.env.PADDLE_WEBHOOK_SECRET;
 
-  if (secret) {
-    const crypto = require('crypto');
-    const ts = req.headers['paddle-signature']?.match(/ts=(\d+)/)?.[1];
-    const h1 = req.headers['paddle-signature']?.match(/h1=([a-f0-9]+)/)?.[1];
-    const payload = `${ts}:${JSON.stringify(req.body)}`;
-    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-    if (expected !== h1) {
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
+  // GÜVENLİK: Secret yoksa (production'da tanımlanmamışsa) webhook'u reddet.
+  // Bu sayede PADDLE_WEBHOOK_SECRET olmadan sahte webhook'larla VIP aktivasyonu engellenmiş olur.
+  if (!secret) {
+    console.warn('⚠️  PADDLE_WEBHOOK_SECRET tanımlı değil — webhook reddedildi.');
+    return res.status(401).json({ error: 'Webhook secret yapılandırılmamış.' });
+  }
+
+  const crypto = require('crypto');
+  const ts = req.headers['paddle-signature']?.match(/ts=(\d+)/)?.[1];
+  const h1 = req.headers['paddle-signature']?.match(/h1=([a-f0-9]+)/)?.[1];
+
+  if (!ts || !h1) {
+    return res.status(401).json({ error: 'Paddle-Signature header eksik.' });
+  }
+
+  const payload  = `${ts}:${JSON.stringify(req.body)}`;
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  if (expected !== h1) {
+    return res.status(401).json({ error: 'Invalid signature' });
   }
 
   const event = req.body;

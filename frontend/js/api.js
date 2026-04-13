@@ -23,6 +23,8 @@
   window.API_BASE = base;
 })();
 
+// ─── MERKEZ apiFetch — auth.js bu tanımın üzerine YAZMASIN ──────────────
+// Token okuma: auth.js yüklenmeden önce de çalışabilmesi için localStorage'dan direkt oku.
 window.apiFetch = function (url, opts) {
   opts = opts || {};
   var token = localStorage.getItem('ca_token');
@@ -34,3 +36,4 @@ window.apiFetch = function (url, opts) {
     ),
   }));
 };
+window._apiFetchDefined = true; // auth.js kontrolü için işaret

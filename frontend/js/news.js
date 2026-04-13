@@ -26,15 +26,7 @@ const COIN_KEYWORDS = {
 
 const COIN_AVATARS = { BTC:'₿', ETH:'Ξ', SOL:'◎', XRP:'✕', ADA:'₳', BNB:'⬡' };
 
-// ─── TOAST ────────────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const icons = { success:'✓', error:'✕', info:'◈' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 3800);
-}
+// toast → utils.js'den geliyor (window.toast)
 
 // ─── SIDEBAR TOGGLE ───────────────────────────────────────────────────────
 window.toggleSidebar = function() {
@@ -224,9 +216,8 @@ function renderNewsCard(n, i) {
   </article>`;
 }
 
-function escHtml(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// escHtml → utils.js'den geliyor (window.escHtml)
+var escHtml = window.escHtml;
 
 // ─── LOAD MORE ────────────────────────────────────────────────────────────
 window.loadMore = function() {
@@ -285,16 +276,10 @@ window.closeNewsModal = function() {
 };
 
 function renderCommentary(text) {
-  const el = document.getElementById('detailBody');
+  var el = document.getElementById('detailBody');
   if (!el) return;
-  el.innerHTML = text
-    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>').replace(/$/, '</p>')
-    .replace(/<p><h3>/g, '<h3>').replace(/<\/h3><\/p>/g, '</h3>');
+  // formatMarkdown → utils.js
+  el.innerHTML = window.formatMarkdown(text);
 }
 
 async function fetchCommentary(n, index) {

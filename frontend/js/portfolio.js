@@ -1,25 +1,16 @@
 // js/portfolio.js — Portföy takipçisi
 'use strict';
 
-const COIN_AVATARS = { BTC:'₿', ETH:'Ξ', SOL:'◎', XRP:'✕', ADA:'₳', BNB:'⬡' };
-const COIN_COLORS  = { BTC:'#F7931A', ETH:'#627EEA', SOL:'#9945FF', XRP:'#00AAE4', ADA:'#0D1E7E', BNB:'#F3BA2F' };
+// COIN_AVATARS, COIN_COLORS, toast, fmtUsd → utils.js'den geliyor
+var COIN_AVATARS = window.COIN_AVATARS;
+var COIN_COLORS  = window.COIN_COLORS;
 
 let portfolioData = null;
 
-// ─── TOAST ────────────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const icons = { success:'✓', error:'✕', info:'◈' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 3800);
-}
-
 // ─── FORMAT ───────────────────────────────────────────────────────────────
-function fmt(n, dec = 2) {
-  if (n === undefined || n === null || isNaN(n)) return '—';
-  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+function fmt(n, dec) {
+  dec = (dec !== undefined) ? dec : 2;
+  return window.fmtUsd(n, dec);
 }
 function fmtPct(n) {
   if (!n && n !== 0) return '—';
