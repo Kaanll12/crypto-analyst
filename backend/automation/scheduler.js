@@ -9,6 +9,25 @@ function startScheduler() {
 
   console.log(`⏰ Zamanlayıcı başlatıldı | Günlük rapor: her gün saat 09:00`);
 
+  // ─── ANLИК BAŞLATMA: Bugünkü rapor yoksa hemen oluştur ───────────────────
+  setTimeout(async () => {
+    try {
+      const db = require('../config/database');
+      const today = new Date().toISOString().split('T')[0];
+      const existing = db.prepare(
+        `SELECT id FROM daily_reports WHERE report_date = ?`
+      ).get(today);
+      if (!existing) {
+        console.log(`\n📊 [${new Date().toLocaleString('tr-TR')}] Bugünkü rapor bulunamadı, anlık oluşturuluyor...`);
+        await generateDailyReport();
+      } else {
+        console.log(`✅ Bugünkü rapor zaten mevcut (${today}), atlandı.`);
+      }
+    } catch (err) {
+      console.error('Anlık rapor oluşturma hatası:', err.message);
+    }
+  }, 5000); // Sunucu tam ayağa kalksın diye 5 sn bekle
+
   // ─── GÜNLÜK RAPOR (Her gün saat 09:00) ───────────────────────────────
   cron.schedule(cronExpression, async () => {
     console.log(`\n🚀 [${new Date().toLocaleString('tr-TR')}] Günlük otomasyon başladı`);

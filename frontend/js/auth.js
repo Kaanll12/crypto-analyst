@@ -4,6 +4,13 @@
 const TOKEN_KEY = 'ca_token';
 const USER_KEY  = 'ca_user';
 
+// utils.js'den önce yüklenirse window.toast henüz tanımsız olabilir — güvenli wrapper
+function toast(msg, type) {
+  if (window.toast && window.toast !== toast) return window.toast(msg, type);
+  // Fallback: utils.js yüklenene kadar basit console log
+  console.info('[toast]', type, msg);
+}
+
 window.currentUser = null;
 
 // ─── MODAL HELPERS ─────────────────────────────────────────────────────────

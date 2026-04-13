@@ -73,9 +73,9 @@ app.get('/api/health', (_req, res) => {
   app.get('/sitemap.xml', (_req, res) => res.sendFile(path.join(frontendPath, 'sitemap.xml')));
   app.get('/robots.txt',  (_req, res) => res.sendFile(path.join(frontendPath, 'robots.txt')));
 
-  // SPA: /api dışındaki tüm GET isteklerini index.html'e yönlendir
-  // (hem production hem development'ta çalışır)
-  app.get(/^(?!\/api\/).*/, (_req, res) => {
+  // SPA: uzantısız path'ler için index.html döndür (js/css/png gibi dosyalar HARİÇ)
+  // Uzantılı dosya istekleri express.static tarafından ya servis edilir ya 404 döner
+  app.get(/^(?!\/api\/)(?!.*\.[a-zA-Z0-9]{1,6}$).*/, (_req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
   });
 }
