@@ -1,7 +1,8 @@
 // automation/scheduler.js
 const cron = require('node-cron');
 const { generateDailyReport } = require('./dailyReport');
-const { sendWeeklyDigest }    = require('./emailDigest');
+let sendWeeklyDigest;
+try { ({ sendWeeklyDigest } = require('./emailDigest')); } catch(e) { console.error('⚠️  emailDigest yüklenemedi:', e.message); }
 
 function startScheduler() {
   const cronExpression = process.env.DAILY_REPORT_CRON || '0 9 * * *';
@@ -17,14 +18,16 @@ function startScheduler() {
   });
 
   // ─── HAFTALIK E-POSTA ÖZETİ (Her Pazartesi 08:00) ────────────────────
-  cron.schedule(process.env.WEEKLY_DIGEST_CRON || '0 8 * * 1', async () => {
-    console.log(`\n📧 [${new Date().toLocaleString('tr-TR')}] Haftalık e-posta özeti başlatıldı`);
-    try {
-      await sendWeeklyDigest();
-    } catch (err) {
-      console.error('Haftalık özet hatası:', err.message);
-    }
-  }, { timezone: 'Europe/Istanbul' });
+  if (sendWeeklyDigest) {
+    cron.schedule(process.env.WEEKLY_DIGEST_CRON || '0 8 * * 1', async () => {
+      console.log(`\n📧 [${new Date().toLocaleString('tr-TR')}] Haftalık e-posta özeti başlatıldı`);
+      try {
+        await sendWeeklyDigest();
+      } catch (err) {
+        console.error('Haftalık özet hatası:', err.message);
+      }
+    }, { timezone: 'Europe/Istanbul' });
+  }
 
   // ─── HAFTALIK TEMİZLİK (Her Pazar 02:00) ─────────────────────────────
   cron.schedule('0 2 * * 0', () => {

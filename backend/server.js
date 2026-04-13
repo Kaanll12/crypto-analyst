@@ -18,8 +18,11 @@ const newsRoutes     = require('./routes/news');
 const paymentRoutes  = require('./routes/payments');
 const portfolioRoutes = require('./routes/portfolio');
 const alertRoutes    = require('./routes/alerts');
-const notifyRoutes   = require('./routes/notifications');
-const emailRoutes    = require('./routes/email');
+
+// Yeni rotalar — hata olursa server ayakta kalsın
+let notifyRoutes, emailRoutes;
+try { notifyRoutes = require('./routes/notifications'); } catch(e) { console.error('⚠️  notifications route yüklenemedi:', e.message); }
+try { emailRoutes  = require('./routes/email');         } catch(e) { console.error('⚠️  email route yüklenemedi:', e.message); }
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -46,8 +49,8 @@ app.use('/api/news',     newsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/alerts',        alertRoutes);
-app.use('/api/notifications', notifyRoutes);
-app.use('/api/email',         emailRoutes);
+if (notifyRoutes) app.use('/api/notifications', notifyRoutes);
+if (emailRoutes)  app.use('/api/email',         emailRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -70,11 +73,11 @@ app.get('/api/health', (_req, res) => {
   app.get('/sitemap.xml', (_req, res) => res.sendFile(path.join(frontendPath, 'sitemap.xml')));
   app.get('/robots.txt',  (_req, res) => res.sendFile(path.join(frontendPath, 'robots.txt')));
 
-  if (process.env.NODE_ENV === 'production') {
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(frontendPath, 'index.html'));
-    });
-  }
+  // SPA: /api dışındaki tüm GET isteklerini index.html'e yönlendir
+  // (hem production hem development'ta çalışır)
+  app.get(/^(?!\/api\/).*/, (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
 }
 
 // ─── HATA YÖNETİMİ ───────────────────────────────────────────────────────
