@@ -258,12 +258,14 @@ function renderAnalysisPanel(data) {
   // Explanation card
   document.getElementById('explanationCard').style.display = '';
 
-  // Key factors
+  // Key factors (JSON string veya array olabilir)
   const kfEl = document.getElementById('keyFactors');
   const kfList = document.getElementById('kfList');
-  if (key_factors && key_factors.length > 0) {
+  let kf = key_factors;
+  if (typeof kf === 'string') { try { kf = JSON.parse(kf); } catch(_) { kf = []; } }
+  if (Array.isArray(kf) && kf.length > 0) {
     kfEl.style.display = '';
-    kfList.innerHTML = key_factors.map(f => `<li>${f}</li>`).join('');
+    kfList.innerHTML = kf.map(f => `<li>${window.escHtml ? window.escHtml(f) : f}</li>`).join('');
   } else {
     kfEl.style.display = 'none';
   }
@@ -276,7 +278,11 @@ function renderAnalysisPanel(data) {
 }
 
 // formatAnalysisContent → utils.js'deki window.formatMarkdown kullanılıyor
-var formatAnalysisContent = window.formatMarkdown;
+// window.formatMarkdown henüz tanımlanmamışsa güvenli fallback
+function formatAnalysisContent(text) {
+  if (window.formatMarkdown) return window.formatMarkdown(text);
+  return text ? '<p>' + text.replace(/\n/g, '<br>') + '</p>' : '';
+}
 
 // ─── GENERATE ANALYSIS ──────────────────────────────────────────────────────
 async function generateAnalysis() {

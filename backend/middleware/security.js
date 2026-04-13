@@ -10,11 +10,11 @@ const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:     ["'self'"],
-      scriptSrc:      ["'self'", "'unsafe-inline'", 'cdn.paddle.com', 'fonts.googleapis.com'],
+      scriptSrc:      ["'self'", "'unsafe-inline'", 'cdn.paddle.com', 'fonts.googleapis.com', 'cdnjs.cloudflare.com'],
       styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'fonts.gstatic.com'],
-      fontSrc:        ["'self'", 'fonts.gstatic.com'],
-      imgSrc:         ["'self'", 'data:', 'https:'],
-      connectSrc:     ["'self'", 'api.coingecko.com', 'sandbox-api.paddle.com', 'api.paddle.com'],
+      fontSrc:        ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com'],
+      imgSrc:         ["'self'", 'data:', 'blob:', 'https:'],
+      connectSrc:     ["'self'", 'api.coingecko.com', 'pro-api.coingecko.com', 'sandbox-api.paddle.com', 'api.paddle.com'],
       frameSrc:       ["'self'", 'paddle.com', '*.paddle.com'],
       objectSrc:      ["'none'"],
       upgradeInsecureRequests: [],

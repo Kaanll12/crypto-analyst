@@ -3,7 +3,8 @@
 
 'use strict';
 
-const CACHE_NAME    = 'crypto-analyst-v1';
+// Versiyon numarasını her deploy sonrası artır — eski önbellek otomatik temizlenir
+const CACHE_NAME    = 'crypto-analyst-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -24,7 +25,11 @@ const STATIC_ASSETS = [
   '/js/history.js',
   '/js/payments.js',
   '/js/notifications.js',
+  '/js/sharecard.js',
+  '/js/compare.js',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // ─── INSTALL: Statik varlıkları önbelleğe al ─────────────────────────────────

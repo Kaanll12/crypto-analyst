@@ -70,8 +70,10 @@ app.get('/api/health', (_req, res) => {
   app.use(express.static(frontendPath));
 
   // SEO: sitemap & robots her ortamda servis edilsin
-  app.get('/sitemap.xml', (_req, res) => res.sendFile(path.join(frontendPath, 'sitemap.xml')));
-  app.get('/robots.txt',  (_req, res) => res.sendFile(path.join(frontendPath, 'robots.txt')));
+  app.get('/sitemap.xml',  (_req, res) => res.sendFile(path.join(frontendPath, 'sitemap.xml')));
+  app.get('/robots.txt',   (_req, res) => res.sendFile(path.join(frontendPath, 'robots.txt')));
+  // Favicon: tarayıcı /favicon.ico ister — mevcut icon'a yönlendir
+  app.get('/favicon.ico',  (_req, res) => res.sendFile(path.join(frontendPath, 'icons', 'icon-192.png')));
 
   // SPA: uzantısız path'ler için index.html döndür (js/css/png gibi dosyalar HARİÇ)
   // Uzantılı dosya istekleri express.static tarafından ya servis edilir ya 404 döner

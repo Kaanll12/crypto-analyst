@@ -6,17 +6,40 @@ const db = require('../config/database');
 const COINS = ['bitcoin','ethereum','solana','binancecoin','ripple','cardano'];
 
 async function fetchCoinPrices() {
-  try {
-    const ids = COINS.join(',');
-    const res = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc`
-    );
-    if (!res.ok) throw new Error('CoinGecko API hatası');
-    return await res.json();
-  } catch (err) {
-    console.error('Fiyat çekme hatası:', err.message);
-    return [];
+  const ids = COINS.join(',');
+  const urls = [
+    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc`,
+    `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+  ];
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(10000), // 10 sn timeout
+      });
+      if (!res.ok) {
+        if (res.status === 429) {
+          console.warn('⏳ CoinGecko rate limit, 30 sn bekleniyor...');
+          await new Promise(r => setTimeout(r, 30000));
+          continue;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      // /markets endpoint array döner, /simple/price object döner — normalize et
+      if (Array.isArray(data)) return data;
+      // simple/price formatını markets formatına dönüştür
+      return COINS.map(id => ({
+        id,
+        current_price: data[id]?.usd || 0,
+        price_change_percentage_24h: data[id]?.usd_24h_change || 0,
+      })).filter(c => c.current_price > 0);
+    } catch (err) {
+      console.error(`Fiyat çekme hatası (${url.includes('simple') ? 'fallback' : 'primary'}):`, err.message);
+    }
   }
+  return []; // Her iki endpoint de başarısız
 }
 
 // Gerçek SEO skoru hesapla: analiz sayısı, keyword çeşitliliği ve içerik uzunluğuna göre

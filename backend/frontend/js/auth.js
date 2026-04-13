@@ -4,6 +4,13 @@
 const TOKEN_KEY = 'ca_token';
 const USER_KEY  = 'ca_user';
 
+// utils.js'den önce yüklenirse window.toast henüz tanımsız olabilir — güvenli wrapper
+function toast(msg, type) {
+  if (window.toast && window.toast !== toast) return window.toast(msg, type);
+  // Fallback: utils.js yüklenene kadar basit console log
+  console.info('[toast]', type, msg);
+}
+
 window.currentUser = null;
 
 // ─── MODAL HELPERS ─────────────────────────────────────────────────────────
@@ -33,18 +40,22 @@ function clearSession() {
 }
 function getToken() { return localStorage.getItem(TOKEN_KEY); }
 
-// ─── API FETCH (with auth header) ──────────────────────────────────────────
-window.apiFetch = function(url, opts = {}) {
-  const token = getToken();
-  return fetch(url, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.headers || {}),
-    },
-  });
-};
+// ─── API FETCH ───────────────────────────────────────────────────────────────
+// api.js önce yüklenerek window._apiFetchDefined=true işaretini bırakır.
+// Çift tanım yerine mevcut apiFetch varsa koru — yoksa (api.js yokken) tanımla.
+if (!window._apiFetchDefined) {
+  window.apiFetch = function(url, opts) {
+    opts = opts || {};
+    const token = getToken();
+    return fetch((window.API_BASE || '') + url, Object.assign({}, opts, {
+      headers: Object.assign(
+        { 'Content-Type': 'application/json' },
+        token ? { Authorization: 'Bearer ' + token } : {},
+        opts.headers || {}
+      ),
+    }));
+  };
+}
 
 // ─── LOGIN ──────────────────────────────────────────────────────────────────
 window.login = async function() {

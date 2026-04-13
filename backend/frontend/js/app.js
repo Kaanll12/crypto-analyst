@@ -15,18 +15,7 @@ let prices    = {};
 let currentAnalysis = null;
 let usageData = { used: 0, limit: 2, remaining: 2, isVip: false };
 
-// ─── TOAST ─────────────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const icons = { success: '✓', error: '✕', info: '◈' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => {
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 300);
-  }, 3800);
-}
+// toast() → utils.js'den gelir (window.toast)
 
 // ─── HEADER SCROLL ─────────────────────────────────────────────────────────
 window.addEventListener('scroll', () => {
@@ -124,17 +113,9 @@ async function fetchPrices() {
     const d = await r.json();
     d.forEach(c => { prices[c.id] = c; });
   } catch {
-    COINS.forEach(c => {
-      prices[c.id] = prices[c.id] || {
-        current_price: Math.random() * 60000 + 100,
-        price_change_percentage_24h: (Math.random() - 0.5) * 10,
-        total_volume: Math.random() * 1e10,
-        market_cap: Math.random() * 5e11,
-        high_24h: Math.random() * 65000 + 100,
-        low_24h: Math.random() * 55000 + 100,
-        ath: Math.random() * 70000 + 100,
-      };
-    });
+    // API başarısız olursa: varsa önceki gerçek veriyi koru, hiç veri yoksa boş bırak.
+    // Rastgele sahte fiyat gösterme — kullanıcıyı yanıltır.
+    console.warn('CoinGecko API erişilemedi, önceki veriler korunuyor.');
   }
   renderTicker();
   renderCoinTabs();
@@ -289,21 +270,13 @@ function renderAnalysisPanel(data) {
 
   // Format content (markdown-like)
   document.getElementById('analysisContent').innerHTML = formatAnalysisContent(content);
+
+  // Share butonu için event
+  document.dispatchEvent(new CustomEvent('analysisLoaded', { detail: data }));
 }
 
-function formatAnalysisContent(text) {
-  if (!text) return '';
-  return text
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,  '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm,   '<h3>$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,    '<em>$1</em>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>').replace(/$/, '</p>')
-    .replace(/<p><h3>/g, '<h3>').replace(/<\/h3><\/p>/g, '</h3>');
-}
+// formatAnalysisContent → utils.js'deki window.formatMarkdown kullanılıyor
+var formatAnalysisContent = window.formatMarkdown;
 
 // ─── GENERATE ANALYSIS ──────────────────────────────────────────────────────
 async function generateAnalysis() {
@@ -602,15 +575,18 @@ async function loadNews(coinId) {
     }
 
     document.getElementById('newsBody').innerHTML = items.map(n => {
-      const sentCls = n.sentiment === 'positive' ? 'positive' : n.sentiment === 'negative' ? 'negative' : 'neutral';
-      const sentLabel = n.sentiment === 'positive' ? 'Olumlu' : n.sentiment === 'negative' ? 'Olumsuz' : 'Nötr';
+      // Backend 'bullish'/'bearish'/'neutral' döndürüyor
+      const sent = n.sentiment || 'neutral';
+      const sentCls   = sent === 'bullish' ? 'positive' : sent === 'bearish' ? 'negative' : 'neutral';
+      const sentLabel = sent === 'bullish' ? 'Olumlu'   : sent === 'bearish' ? 'Olumsuz'  : 'Nötr';
+      const pubDate = n.pubDate || n.published_at;
       return `<div class="news-item">
         <div class="news-source">
           <span class="news-src-name">${n.source || 'Haber'}</span>
-          <span class="news-src-time">${n.published_at ? new Date(n.published_at).toLocaleDateString('tr-TR') : ''}</span>
+          <span class="news-src-time">${pubDate ? new Date(pubDate).toLocaleDateString('tr-TR') : ''}</span>
         </div>
         <div class="news-headline">
-          ${n.url ? `<a href="${n.url}" target="_blank" rel="noopener">${n.title}</a>` : n.title}
+          ${n.link ? `<a href="${n.link}" target="_blank" rel="noopener">${n.title}</a>` : n.title}
         </div>
         <span class="news-sentiment ${sentCls}">${sentLabel}</span>
       </div>`;
