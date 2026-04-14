@@ -110,7 +110,7 @@
       </div>
 
       <!-- Filters -->
-      <div class="hist-filters">
+      <div class="hist-filters" style="flex-wrap:wrap;gap:10px">
         <div class="hf-group">
           <label class="hf-label">Coin</label>
           <select class="form-input" id="filterCoin" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px">
@@ -133,15 +133,23 @@
           </select>
         </div>
         <div class="hf-group">
-          <label class="hf-label">Zaman</label>
-          <select class="form-input" id="filterTime" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px">
-            <option value="all">Tümü</option>
-            <option value="today">Bugün</option>
-            <option value="week">Bu Hafta</option>
-            <option value="month">Bu Ay</option>
-          </select>
+          <label class="hf-label">Başlangıç</label>
+          <input class="form-input" type="date" id="filterFrom" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px"/>
         </div>
-        <div class="hf-count" id="filterCount"></div>
+        <div class="hf-group">
+          <label class="hf-label">Bitiş</label>
+          <input class="form-input" type="date" id="filterTo" onchange="applyFilters()" style="width:auto;padding:7px 12px;font-size:13px"/>
+        </div>
+        <div class="hf-group" style="align-self:flex-end">
+          <button class="btn-ghost" onclick="clearFilters()" style="font-size:12px;padding:7px 12px">Filtreleri Temizle</button>
+        </div>
+        <div class="hf-group" style="align-self:flex-end;margin-left:auto">
+          <button class="btn-primary" onclick="downloadCSV()" style="font-size:12px;padding:7px 14px;gap:5px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            CSV İndir
+          </button>
+        </div>
+        <div class="hf-count" id="filterCount" style="align-self:center"></div>
       </div>
 
       <!-- History list -->

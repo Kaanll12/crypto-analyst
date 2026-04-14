@@ -102,20 +102,18 @@ function drawSparkline(coinId) {
   ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
 }
 
-// ─── PRICES ────────────────────────────────────────────────────────────────
+// ─── PRICES (backend proxy üzerinden — rate limit yok) ────────────────────
 async function fetchPrices() {
   try {
-    const ids = COINS.map(c => c.id).join(',');
-    const r = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc`
-    );
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    d.forEach(c => { prices[c.id] = c; });
-  } catch {
-    // API başarısız olursa: varsa önceki gerçek veriyi koru, hiç veri yoksa boş bırak.
-    // Rastgele sahte fiyat gösterme — kullanıcıyı yanıltır.
-    console.warn('CoinGecko API erişilemedi, önceki veriler korunuyor.');
+    const r = await fetch((window.API_BASE || '') + '/api/prices');
+    if (!r.ok) throw new Error('prices API ' + r.status);
+    const json = await r.json();
+    // data bir nesne {coinId: {...}} formatında gelir
+    if (json.data && typeof json.data === 'object') {
+      Object.assign(prices, json.data);
+    }
+  } catch (err) {
+    console.warn('Fiyat proxy erişilemedi, önceki veriler korunuyor.', err.message);
   }
   renderTicker();
   renderCoinTabs();

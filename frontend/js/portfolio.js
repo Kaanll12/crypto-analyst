@@ -6,6 +6,9 @@ var COIN_AVATARS = window.COIN_AVATARS;
 var COIN_COLORS  = window.COIN_COLORS;
 
 let portfolioData = null;
+let pieChartInstance = null;
+let barChartInstance = null;
+const TRY_RATE = 38.5; // yaklaşık USD → TRY dönüşüm kuru
 
 // ─── FORMAT ───────────────────────────────────────────────────────────────
 function fmt(n, dec) {
@@ -26,6 +29,8 @@ async function loadPortfolio() {
     portfolioData = await res.json();
     renderSummary(portfolioData);
     renderCoinCards(portfolioData.coins || []);
+    renderPnlSummary(portfolioData);
+    renderCharts(portfolioData.coins || []);
     await loadPositions();
   } catch {
     document.getElementById('coinCards').innerHTML =
@@ -150,6 +155,158 @@ async function loadPositions() {
   } catch {
     document.getElementById('positionList').innerHTML =
       '<div class="pf-empty">Pozisyonlar yüklenemedi.</div>';
+  }
+}
+
+// ─── P&L ÖZET ─────────────────────────────────────────────────────────────
+function renderPnlSummary(d) {
+  const section = document.getElementById('chartsSection');
+  if (!section) return;
+
+  const coins = d.coins || [];
+  if (!coins.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  const totalUsd = d.totalValue   || 0;
+  const pnlUsd   = d.pnl         || 0;
+  const pnlCls   = pnlUsd >= 0 ? 'profit' : 'loss';
+
+  function fmtTry(n) {
+    return '₺' + (n * TRY_RATE).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  setEl('sumTotalUsd', fmt(totalUsd));
+  setEl('sumTotalTry', fmtTry(totalUsd));
+
+  const pnlEl = document.getElementById('sumPnlUsd');
+  if (pnlEl) {
+    pnlEl.textContent = (pnlUsd >= 0 ? '+' : '') + fmt(pnlUsd);
+    pnlEl.className   = 'pnl-sum-val ' + pnlCls;
+  }
+  const pnlTryEl = document.getElementById('sumPnlTry');
+  if (pnlTryEl) {
+    pnlTryEl.textContent = (pnlUsd >= 0 ? '+' : '') + fmtTry(pnlUsd);
+    pnlTryEl.className   = 'pnl-sum-val ' + pnlCls;
+  }
+
+  // En iyi / en kötü coin
+  if (coins.length) {
+    const sorted = [...coins].sort((a, b) => (b.pnlPct || 0) - (a.pnlPct || 0));
+    const best  = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    const bestEl  = document.getElementById('sumBestCoin');
+    const worstEl = document.getElementById('sumWorstCoin');
+    if (bestEl)  { bestEl.textContent  = `${best.coinSym} (${fmtPct(best.pnlPct)})`; bestEl.className  = 'pnl-sum-val profit'; }
+    if (worstEl) { worstEl.textContent = `${worst.coinSym} (${fmtPct(worst.pnlPct)})`; worstEl.className = 'pnl-sum-val ' + (worst.pnlPct >= 0 ? 'profit' : 'loss'); }
+  }
+}
+
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ─── CHART.JS GRAFİKLER ───────────────────────────────────────────────────
+function renderCharts(coins) {
+  if (!coins.length || typeof Chart === 'undefined') return;
+
+  // Pastel renk paleti
+  const PALETTE = [
+    '#1A56DB','#F97316','#8B5CF6','#22C55E','#EF4444',
+    '#F59E0B','#06B6D4','#EC4899','#10B981','#6366F1',
+  ];
+
+  // ── PIE CHART: coin dağılımı ──────────────────────────────────────
+  const pieCtx = document.getElementById('pieChart');
+  if (pieCtx) {
+    if (pieChartInstance) { pieChartInstance.destroy(); pieChartInstance = null; }
+    pieChartInstance = new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: coins.map(c => c.coinSym),
+        datasets: [{
+          data:            coins.map(c => +(c.currentValue || 0).toFixed(2)),
+          backgroundColor: coins.map((_, i) => PALETTE[i % PALETTE.length]),
+          borderColor:     'rgba(0,0,0,0)',
+          borderWidth:     2,
+          hoverOffset:     6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#9ca3af',
+              font: { size: 12 },
+              padding: 12,
+              boxWidth: 12,
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const val = ctx.raw;
+                const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                return `${ctx.label}: $${val.toLocaleString()} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ── BAR CHART: K/Z ────────────────────────────────────────────────
+  const barCtx = document.getElementById('barChart');
+  if (barCtx) {
+    if (barChartInstance) { barChartInstance.destroy(); barChartInstance = null; }
+    barChartInstance = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: coins.map(c => c.coinSym),
+        datasets: [{
+          label: 'K/Z (USD)',
+          data:  coins.map(c => +(c.pnl || 0).toFixed(2)),
+          backgroundColor: coins.map(c =>
+            (c.pnl || 0) >= 0 ? 'rgba(34,197,94,.7)' : 'rgba(239,68,68,.7)'
+          ),
+          borderRadius: 6,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `K/Z: $${ctx.raw.toLocaleString()}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#9ca3af', font: { size: 12 } },
+            grid:  { color: 'rgba(255,255,255,.05)' },
+          },
+          y: {
+            ticks: {
+              color: '#9ca3af', font: { size: 11 },
+              callback: (v) => '$' + v.toLocaleString(),
+            },
+            grid: { color: 'rgba(255,255,255,.05)' },
+          },
+        },
+      },
+    });
   }
 }
 

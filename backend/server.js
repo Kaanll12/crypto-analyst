@@ -7,7 +7,7 @@ const path    = require('path');
 const db = require('./config/database');
 const {
   helmetMiddleware, corsMiddleware,
-  generalLimiter, sanitizeInput, apiLogger
+  generalLimiter, sanitizeInput, apiLogger, httpsRedirect
 } = require('./middleware/security');
 const { startScheduler } = require('./automation/scheduler');
 
@@ -18,6 +18,8 @@ const newsRoutes     = require('./routes/news');
 const paymentRoutes  = require('./routes/payments');
 const portfolioRoutes = require('./routes/portfolio');
 const alertRoutes    = require('./routes/alerts');
+const pricesRoutes   = require('./routes/prices');
+const adminRoutes    = require('./routes/admin');
 
 // Yeni rotalar — hata olursa server ayakta kalsın
 let notifyRoutes, emailRoutes;
@@ -32,6 +34,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), pay
 
 // ─── TEMEL MİDDLEWARE ────────────────────────────────────────────────────
 app.set('trust proxy', 1);
+app.use(httpsRedirect);   // HTTP → HTTPS (production)
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
 app.use(express.json({ limit: '10kb' }));
@@ -49,16 +52,33 @@ app.use('/api/news',     newsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/alerts',        alertRoutes);
+app.use('/api/prices',        pricesRoutes);
+app.use('/api/admin',         adminRoutes);
 if (notifyRoutes) app.use('/api/notifications', notifyRoutes);
 if (emailRoutes)  app.use('/api/email',         emailRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
+  let dbStatus = 'ok';
+  let lastReport = null;
+  let activeUsers = 0;
+  try {
+    db.prepare('SELECT 1').get();
+    const rpt = db.prepare("SELECT report_date FROM daily_reports ORDER BY report_date DESC LIMIT 1").get();
+    lastReport = rpt?.report_date || null;
+    activeUsers = db.prepare("SELECT COUNT(*) as n FROM users WHERE is_active = 1").get().n;
+  } catch (e) {
+    dbStatus = 'error';
+  }
   res.json({
-    status: 'ok',
+    status: dbStatus === 'ok' ? 'ok' : 'degraded',
     time: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
+    db: dbStatus,
+    lastReport,
+    activeUsers,
     stripe: !!process.env.STRIPE_SECRET_KEY,
+    vapid: !!(process.env.VAPID_PUBLIC_KEY || process.env.VAPID_PRIVATE_KEY),
   });
 });
 

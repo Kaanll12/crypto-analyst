@@ -73,20 +73,23 @@ router.delete('/:id', authenticate, [param('id').isUUID()], (req, res) => {
   res.json({ message: 'Alarm silindi.' });
 });
 
-// ─── ALARM KONTROL (scheduler tarafından çağrılır) ───────────────────────
+// ─── ALARM KONTROL (scheduler tarafından her 5 dk çağrılır) ─────────────
 async function checkAlerts() {
   const activeAlerts = db.prepare(`
-    SELECT * FROM price_alerts WHERE is_active = 1
+    SELECT pa.*, u.username FROM price_alerts pa
+    JOIN users u ON pa.user_id = u.id
+    WHERE pa.is_active = 1
   `).all();
 
   if (!activeAlerts.length) return;
 
-  // Tüm coinlerin fiyatlarını çek
+  // Fiyatları backend cache'den çek (rate-limit yok)
   const coinIds = [...new Set(activeAlerts.map(a => a.coin_id))].join(',');
   let prices = {};
   try {
     const r = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}`
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}`,
+      { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {
       const data = await r.json();
@@ -94,22 +97,47 @@ async function checkAlerts() {
     }
   } catch(_) { return; }
 
+  // Push bildirim modülünü lazy-load et
+  let sendPushToUser = null;
+  try {
+    const notifyMod = require('./notifications');
+    sendPushToUser = notifyMod.sendPushToUser;
+  } catch(_) {}
+
   // Her alarm için kontrol et
-  activeAlerts.forEach(alert => {
+  for (const alert of activeAlerts) {
     const price = prices[alert.coin_id];
-    if (!price) return;
+    if (!price) continue;
 
     const triggered =
       (alert.condition === 'above' && price >= alert.target_price) ||
       (alert.condition === 'below' && price <= alert.target_price);
 
     if (triggered) {
-      db.prepare(`
-        UPDATE price_alerts SET is_active = 0, triggered_at = datetime('now') WHERE id = ?
-      `).run(alert.id);
-      console.log(`🔔 Alarm tetiklendi: ${alert.coin_sym} ${alert.condition} $${alert.target_price} (şu an: $${price})`);
+      // Alarmı kapat
+      db.prepare(`UPDATE price_alerts SET is_active = 0, triggered_at = datetime('now') WHERE id = ?`).run(alert.id);
+
+      const dirTR = alert.condition === 'above' ? 'üstüne çıktı' : 'altına düştü';
+      const msg   = `${alert.coin_sym} $${price.toLocaleString('en-US',{maximumFractionDigits:2})} ile $${alert.target_price.toLocaleString('en-US',{maximumFractionDigits:2})} hedef fiyatın ${dirTR}!`;
+
+      console.log(`🔔 Alarm tetiklendi — ${alert.username}: ${msg}`);
+
+      // Push bildirimi gönder
+      if (sendPushToUser) {
+        try {
+          await sendPushToUser(alert.user_id, {
+            title: `⚡ ${alert.coin_sym} Fiyat Alarmı`,
+            body:  msg,
+            icon:  '/icons/icon-192.png',
+            url:   '/',
+            tag:   `alarm-${alert.id}`,
+          });
+        } catch(pushErr) {
+          console.warn('Push bildirimi gönderilemedi:', pushErr.message);
+        }
+      }
     }
-  });
+  }
 }
 
 router.checkAlerts = checkAlerts;

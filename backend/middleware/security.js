@@ -108,8 +108,22 @@ function apiLogger(db) {
   };
 }
 
+// ─── HTTPS YÖNLENDİRME (production) ──────────────────────────────────────
+// NODE_ENV=production ise HTTP isteklerini HTTPS'e yönlendir.
+// X-Forwarded-Proto başlığı kullanılır (Railway, Render, Heroku vb. proxy'ler için).
+function httpsRedirect(req, res, next) {
+  if (process.env.NODE_ENV !== 'production') return next();
+  // Zaten HTTPS ise geç
+  const proto = req.headers['x-forwarded-proto'];
+  if (proto && proto.split(',')[0].trim() === 'https') return next();
+  if (req.secure) return next();
+  // HTTP → HTTPS yönlendir (301 kalıcı)
+  const host = req.headers.host || 'localhost';
+  return res.redirect(301, 'https://' + host + req.originalUrl);
+}
+
 module.exports = {
   helmetMiddleware, corsMiddleware,
   generalLimiter, authLimiter, analysisLimiter,
-  sanitizeInput, apiLogger,
+  sanitizeInput, apiLogger, httpsRedirect,
 };

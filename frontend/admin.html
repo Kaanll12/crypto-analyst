@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Paneli — CryptoAnalyst</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+    .admin-title { font-size: 1.5rem; font-weight: 700; color: var(--fg); margin-bottom: 24px; display:flex; align-items:center; gap:10px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; margin-bottom: 28px; }
+    .stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
+    .stat-box .val { font-size: 1.8rem; font-weight: 700; color: var(--accent); font-family: 'Geist Mono',monospace; }
+    .stat-box .lbl { font-size: .75rem; color: var(--fg-muted); margin-top: 4px; }
+    .section-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 20px; margin-bottom: 20px; }
+    .section-card h3 { font-size: .9rem; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .admin-table th { text-align: left; padding: 8px 10px; color: var(--fg-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .admin-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--fg); vertical-align: middle; }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--bg-card-2); }
+    .role-badge { display:inline-block; padding: 2px 8px; border-radius: 99px; font-size: .72rem; font-weight: 600; }
+    .role-admin { background: oklch(.50 .18 280/.2); color: oklch(.70 .18 280); }
+    .role-vip   { background: oklch(.50 .20 55/.2);  color: oklch(.75 .20 55);  }
+    .role-user  { background: var(--bg-secondary); color: var(--fg-muted); }
+    .btn-xs { padding: 3px 10px; border-radius: 6px; font-size: .75rem; font-weight: 500; cursor:pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--fg); transition: background .15s; }
+    .btn-xs:hover { background: var(--bg-card-2); }
+    .btn-xs.danger { border-color: var(--bearish); color: var(--bearish); }
+    .btn-xs.success { border-color: var(--bullish); color: var(--bullish); }
+    .search-bar { display:flex; gap:8px; margin-bottom:14px; }
+    .search-bar input { flex:1; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--r-sm); padding: 7px 12px; color:var(--fg); font-size:.85rem; }
+    .search-bar input:focus { outline:none; border-color: var(--accent); }
+    .pagination { display:flex; gap:8px; margin-top:12px; align-items:center; font-size:.82rem; color:var(--fg-muted); }
+    .pagination button { padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--fg); cursor:pointer; }
+    .pagination button:disabled { opacity:.4; cursor:default; }
+    .trend-bar { display:flex; align-items:flex-end; gap:3px; height:40px; }
+    .trend-bar .bar { width:18px; background:var(--accent-dim); border-radius:3px 3px 0 0; transition: background .2s; min-height:4px; }
+    .trend-bar .bar:hover { background: var(--accent); }
+    .log-row td { font-family:'Geist Mono',monospace; font-size:.78rem; }
+    .status-ok  { color: var(--bullish); }
+    .status-err { color: var(--bearish); }
+    .tab-btns { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .tab-btn { padding:7px 16px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--fg-muted); cursor:pointer; font-size:.85rem; transition:all .15s; }
+    .tab-btn.active { background:var(--accent-dim); border-color:var(--accent); color:var(--fg); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .no-access { text-align:center; padding:60px 20px; color:var(--fg-muted); }
+    .no-access svg { opacity:.3; margin-bottom:12px; }
+    .inline-select { background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:3px 6px; color:var(--fg); font-size:.78rem; }
+    .top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  </style>
+</head>
+<body>
+<div id="toastContainer" class="toast-container"></div>
+
+<header class="header" id="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logo-svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span>crypto<strong>analyst</strong></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Ana Sayfa</a>
+      <a href="/admin.html" style="color:var(--accent)">Admin</a>
+    </nav>
+    <div class="header-actions">
+      <div id="userArea" style="display:none" class="auth-btns">
+        <div class="user-chip" id="userBadge"></div>
+        <button class="btn-ghost" onclick="logout()">Çıkış</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="admin-wrap" style="margin-top:80px">
+
+  <!-- Erişim Yok Ekranı -->
+  <div id="noAccess" class="no-access" style="display:none">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <p style="font-size:1.1rem;font-weight:600;color:var(--fg);margin-bottom:6px">Erişim Reddedildi</p>
+    <p>Bu sayfaya yalnızca admin kullanıcılar erişebilir.</p>
+  </div>
+
+  <!-- Admin İçerik -->
+  <div id="adminContent" style="display:none">
+    <div class="top-bar">
+      <div class="admin-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin Paneli
+      </div>
+      <div style="display:flex;gap:8px;font-size:.82rem;color:var(--fg-muted)" id="adminInfo"></div>
+    </div>
+
+    <!-- Sekme Navigasyonu -->
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('users')">👥 Kullanıcılar</button>
+      <button class="tab-btn" onclick="switchTab('reports')">📋 Raporlar</button>
+      <button class="tab-btn" onclick="switchTab('logs')">🔍 API Logları</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stat-grid" id="statGrid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap">
+        <div class="section-card">
+          <h3>Son 7 Gün — Analiz Trendi</h3>
+          <div class="trend-bar" id="trendBar"></div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--fg-subtle);margin-top:4px" id="trendLabels"></div>
+        </div>
+        <div class="section-card">
+          <h3>En Çok Analiz Edilen Coinler</h3>
+          <div id="topCoinsTable"></div>
+        </div>
+      </div>
+      <div class="section-card" style="margin-top:16px">
+        <h3>Son Kayıtlanan Kullanıcılar</h3>
+        <table class="admin-table" id="recentUsersTable">
+          <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Kayıt</th><th>Son Giriş</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KULLANICILAR -->
+    <div class="tab-content" id="tab-users">
+      <div class="search-bar">
+        <input type="text" id="userSearch" placeholder="Kullanıcı adı veya e-posta ara…" oninput="debounceSearch()" />
+        <button class="btn-ghost btn-sm" onclick="loadUsers(1)">Ara</button>
+      </div>
+      <div class="section-card" style="padding:0;overflow:auto">
+        <table class="admin-table" id="usersTable">
+          <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Bugün</th><th>Durum</th><th>Kayıt</th><th>İşlem</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="userPagination"></div>
+    </div>
+
+    <!-- RAPORLAR -->
+    <div class="tab-content" id="tab-reports">
+      <div class="section-card" style="padding:0;overflow:auto">
+        <table class="admin-table" id="reportsTable">
+          <thead><tr><th>Tarih</th><th>SEO</th><th>Perf</th><th>İçerik</th><th>Analizler</th><th>Oluşturulma</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LOGLAR -->
+    <div class="tab-content" id="tab-logs">
+      <div class="section-card" style="padding:0;overflow:auto;max-height:600px">
+        <table class="admin-table log-row" id="logsTable">
+          <thead><tr><th>Endpoint</th><th>Method</th><th>Status</th><th>Ms</th><th>IP</th><th>Zaman</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script>
+let currentPage = 1;
+let searchTimer = null;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['dashboard','users','reports','logs'][i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'users')   loadUsers(1);
+  if (name === 'reports') loadReports();
+  if (name === 'logs')    loadLogs();
+}
+
+function roleBadge(role) {
+  return `<span class="role-badge role-${role}">${role.toUpperCase()}</span>`;
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+
+// ─── DASHBOARD
+async function loadDashboard() {
+  try {
+    const r = await window.apiFetch('/api/admin/stats');
+    if (!r.ok) { if (r.status===403) showNoAccess(); return; }
+    const d = await r.json();
+
+    // Stat kutuları
+    const s = d.stats;
+    document.getElementById('statGrid').innerHTML = [
+      ['Toplam Kullanıcı', s.totalUsers,    '👥'],
+      ['Aktif Kullanıcı',  s.activeUsers,   '✅'],
+      ['VIP Üye',          s.vipUsers,      '💎'],
+      ['Toplam Analiz',    s.totalAnalyses, '🔬'],
+      ['Bugünkü Analiz',   s.todayAnalyses, '📅'],
+      ['Günlük Rapor',     s.totalReports,  '📋'],
+      ['Aktif Alarm',      s.activeAlerts,  '🔔'],
+    ].map(([lbl,val,ico]) =>
+      `<div class="stat-box"><div class="val">${ico} ${val}</div><div class="lbl">${lbl}</div></div>`
+    ).join('');
+
+    // Trend chart
+    const maxCount = Math.max(...d.weeklyTrend.map(x => x.count), 1);
+    const trendBar = document.getElementById('trendBar');
+    trendBar.innerHTML = d.weeklyTrend.map(x => {
+      const h = Math.max(4, Math.round((x.count / maxCount) * 40));
+      return `<div class="bar" style="height:${h}px" title="${x.day}: ${x.count} analiz"></div>`;
+    }).join('');
+    document.getElementById('trendLabels').innerHTML = d.weeklyTrend.map(x =>
+      `<span>${x.day.slice(5)}</span>`
+    ).join('');
+
+    // Top coins
+    document.getElementById('topCoinsTable').innerHTML = d.topCoins.map(c =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-weight:500">${c.coin_sym} <span style="color:var(--fg-muted);font-size:.8rem">${c.coin_name}</span></span>
+        <span style="font-family:'Geist Mono',monospace;color:var(--accent)">${c.count}</span>
+      </div>`
+    ).join('');
+
+    // Son kullanıcılar
+    const tbody = document.querySelector('#recentUsersTable tbody');
+    tbody.innerHTML = d.recentUsers.map(u =>
+      `<tr><td><strong>${u.username}</strong></td><td>${u.email}</td><td>${roleBadge(u.role)}</td><td>${fmtDate(u.created_at)}</td><td>${fmtDate(u.last_login)}</td></tr>`
+    ).join('');
+
+  } catch(e) { window.toast('Dashboard yüklenemedi.', 'error'); }
+}
+
+// ─── USERS
+async function loadUsers(page) {
+  currentPage = page || 1;
+  const search = document.getElementById('userSearch').value.trim();
+  const qs = `?page=${currentPage}` + (search ? `&search=${encodeURIComponent(search)}` : '');
+  try {
+    const r = await window.apiFetch('/api/admin/users' + qs);
+    if (!r.ok) return;
+    const d = await r.json();
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = d.data.map(u =>
+      `<tr>
+        <td><strong>${u.username}</strong></td>
+        <td style="color:var(--fg-muted)">${u.email}</td>
+        <td>
+          <select class="inline-select" onchange="changeRole('${u.id}',this.value)">
+            ${['user','vip','admin'].map(r => `<option value="${r}" ${r===u.role?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+          </select>
+        </td>
+        <td style="font-family:'Geist Mono',monospace">${u.todayUsage}</td>
+        <td><span style="color:${u.is_active?'var(--bullish)':'var(--bearish)'}">${u.is_active?'Aktif':'Pasif'}</span></td>
+        <td>${fmtDate(u.created_at)}</td>
+        <td><button class="btn-xs ${u.is_active?'danger':'success'}" onclick="toggleUser('${u.id}', ${u.is_active})">${u.is_active?'Kapat':'Aç'}</button></td>
+      </tr>`
+    ).join('');
+
+    const pag = document.getElementById('userPagination');
+    pag.innerHTML = `
+      <button onclick="loadUsers(${currentPage-1})" ${currentPage<=1?'disabled':''}>← Önceki</button>
+      <span>${currentPage} / ${d.pages} (${d.total} kullanıcı)</span>
+      <button onclick="loadUsers(${currentPage+1})" ${currentPage>=d.pages?'disabled':''}>Sonraki →</button>
+    `;
+  } catch(e) { window.toast('Kullanıcılar yüklenemedi.', 'error'); }
+}
+
+async function changeRole(userId, role) {
+  const r = await window.apiFetch('/api/admin/users/'+userId+'/role', { method:'PUT', body: JSON.stringify({role}) });
+  if (r.ok) window.toast('Rol güncellendi.', 'success');
+  else window.toast('Rol güncellenemedi.', 'error');
+}
+
+async function toggleUser(userId, currentState) {
+  const r = await window.apiFetch('/api/admin/users/'+userId+'/toggle', { method:'PUT' });
+  if (r.ok) { loadUsers(currentPage); window.toast(currentState ? 'Kullanıcı pasif edildi.' : 'Kullanıcı aktif edildi.', 'info'); }
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadUsers(1), 400);
+}
+
+// ─── REPORTS
+async function loadReports() {
+  try {
+    const r = await window.apiFetch('/api/admin/reports');
+    const d = await r.json();
+    const tbody = document.querySelector('#reportsTable tbody');
+    tbody.innerHTML = d.data.map(rep =>
+      `<tr>
+        <td style="font-family:'Geist Mono',monospace">${rep.report_date}</td>
+        <td><span style="color:${rep.seo_score>=80?'var(--bullish)':'var(--neutral)'}">${rep.seo_score || '—'}</span></td>
+        <td><span style="color:${rep.perf_score>=90?'var(--bullish)':'var(--neutral)'}">${rep.perf_score || '—'}</span></td>
+        <td>${rep.cont_score || '—'}</td>
+        <td>${rep.total_analyses || 0}</td>
+        <td style="color:var(--fg-muted)">${fmtDate(rep.created_at)}</td>
+      </tr>`
+    ).join('');
+  } catch(e) {}
+}
+
+// ─── LOGS
+async function loadLogs() {
+  try {
+    const r = await window.apiFetch('/api/admin/logs');
+    const d = await r.json();
+    const tbody = document.querySelector('#logsTable tbody');
+    tbody.innerHTML = d.data.map(l =>
+      `<tr class="log-row">
+        <td>${l.endpoint}</td>
+        <td>${l.method}</td>
+        <td class="${l.status_code < 400 ? 'status-ok' : 'status-err'}">${l.status_code}</td>
+        <td>${l.duration_ms}</td>
+        <td style="color:var(--fg-muted)">${l.ip || '—'}</td>
+        <td style="color:var(--fg-muted)">${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+      </tr>`
+    ).join('');
+  } catch(e) {}
+}
+
+function showNoAccess() {
+  document.getElementById('noAccess').style.display = '';
+  document.getElementById('adminContent').style.display = 'none';
+}
+
+// ─── AUTH
+window.onUserLogin = function(user) {
+  document.getElementById('authArea') && (document.getElementById('authArea').style.display='none');
+  document.getElementById('userArea').style.display = 'flex';
+  document.getElementById('userBadge').textContent = user.username;
+  document.getElementById('adminInfo').textContent = `Admin: ${user.username}`;
+
+  if (user.role !== 'admin') {
+    showNoAccess();
+    return;
+  }
+  document.getElementById('adminContent').style.display = '';
+  loadDashboard();
+};
+
+window.onUserLogout = function() { window.location.href = '/'; };
+</script>
+</body>
+</html>

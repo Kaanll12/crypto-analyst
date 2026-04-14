@@ -4,6 +4,98 @@ const { generateDailyReport } = require('./dailyReport');
 let sendWeeklyDigest;
 try { ({ sendWeeklyDigest } = require('./emailDigest')); } catch(e) { console.error('⚠️  emailDigest yüklenemedi:', e.message); }
 
+// ─── FİYAT ALARMLARINI KONTROL ET ────────────────────────────────────────
+// Her 5 dakikada bir çalışır, aktif alarmları CoinGecko'dan çekilen
+// güncel fiyatlarla karşılaştırır; hedef aşılınca push bildirimi gönderir.
+async function checkPriceAlerts() {
+  let db, sendPushToUser;
+
+  try {
+    db = require('../config/database');
+  } catch (e) {
+    console.error('[PriceAlert] DB yüklenemedi:', e.message);
+    return;
+  }
+
+  // sendPushToUser helper'ını dışa aktar
+  try {
+    ({ sendPushToUser } = require('../routes/notifications'));
+  } catch (_) {
+    sendPushToUser = null;
+  }
+
+  const activeAlerts = db.prepare(`
+    SELECT * FROM price_alerts WHERE is_active = 1
+  `).all();
+
+  if (!activeAlerts.length) return;
+
+  // Benzersiz coin ID'lerini topla
+  const coinIds = [...new Set(activeAlerts.map(a => a.coin_id))].join(',');
+
+  // CoinGecko'dan fiyatları çek (simple/price endpoint — daha hızlı)
+  let prices = {};
+  try {
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd`
+    );
+    if (r.ok) {
+      const data = await r.json();
+      // { bitcoin: { usd: 95000 }, ethereum: { usd: 3500 }, ... }
+      Object.entries(data).forEach(([id, vals]) => {
+        prices[id] = vals.usd;
+      });
+    }
+  } catch (e) {
+    console.warn('[PriceAlert] CoinGecko isteği başarısız:', e.message);
+    return;
+  }
+
+  // Her aktif alarm için kontrol et
+  for (const alert of activeAlerts) {
+    const currentPrice = prices[alert.coin_id];
+    if (currentPrice == null) continue;
+
+    const triggered =
+      (alert.condition === 'above' && currentPrice >= alert.target_price) ||
+      (alert.condition === 'below' && currentPrice <= alert.target_price);
+
+    if (!triggered) continue;
+
+    // Alarmı tetiklenmiş olarak güncelle
+    try {
+      db.prepare(`
+        UPDATE price_alerts
+        SET is_active = 0, triggered_at = datetime('now')
+        WHERE id = ?
+      `).run(alert.id);
+    } catch (e) {
+      console.error('[PriceAlert] Alarm güncellenemedi:', e.message);
+    }
+
+    const condLabel = alert.condition === 'above' ? 'üzerine çıktı' : 'altına düştü';
+    const fmtPrice  = currentPrice.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    const tgtPrice  = Number(alert.target_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+    console.log(`🔔 [${new Date().toLocaleString('tr-TR')}] Alarm tetiklendi: ${alert.coin_sym} ${condLabel} ${tgtPrice} (şu an: ${fmtPrice})`);
+
+    // Push bildirimi gönder (mümkünse)
+    if (sendPushToUser) {
+      try {
+        await sendPushToUser(alert.user_id, {
+          title: `🔔 ${alert.coin_sym} Alarmı Tetiklendi!`,
+          body:  `${alert.coin_sym} ${tgtPrice} hedefinin ${condLabel}. Güncel: ${fmtPrice}`,
+          icon:  '/icons/icon-192.png',
+          url:   '/portfolio.html',
+          tag:   `alert-${alert.id}`,
+        });
+      } catch (pushErr) {
+        console.warn('[PriceAlert] Push gönderilemedi:', pushErr.message);
+      }
+    }
+  }
+}
+
 function startScheduler() {
   const cronExpression = process.env.DAILY_REPORT_CRON || '0 9 * * *';
 
@@ -48,6 +140,15 @@ function startScheduler() {
     }, { timezone: 'Europe/Istanbul' });
   }
 
+  // ─── FİYAT ALARM KONTROLÜ (Her 5 dakika) ────────────────────────────
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await checkPriceAlerts();
+    } catch (err) {
+      console.error('[PriceAlert] Cron hatası:', err.message);
+    }
+  }, { timezone: 'Europe/Istanbul' });
+
   // ─── HAFTALIK TEMİZLİK (Her Pazar 02:00) ─────────────────────────────
   cron.schedule('0 2 * * 0', () => {
     const db = require('../config/database');
@@ -58,7 +159,7 @@ function startScheduler() {
     console.log(`🧹 Haftalık temizlik: ${deleted.changes} eski log silindi`);
   }, { timezone: 'Europe/Istanbul' });
 
-  console.log('✅ Tüm zamanlayıcılar aktif (günlük rapor + haftalık özet + temizlik)\n');
+  console.log('✅ Tüm zamanlayıcılar aktif (günlük rapor + haftalık özet + fiyat alarmı + temizlik)\n');
 }
 
 module.exports = { startScheduler };

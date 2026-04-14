@@ -49,8 +49,11 @@ router.get('/stats/summary', (req, res) => {
 // ─── TÜM ANALİZLERİ LİSTELE ──────────────────────────────────────────────
 router.get('/', optionalAuth, [
   query('coin').optional().isString().trim(),
+  query('signal').optional().isIn(['bullish', 'bearish', 'neutral']),
+  query('from').optional().isDate(),
+  query('to').optional().isDate(),
   query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 50 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
 ], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -58,15 +61,33 @@ router.get('/', optionalAuth, [
   const page   = parseInt(req.query.page)  || 1;
   const limit  = parseInt(req.query.limit) || 10;
   const coin   = req.query.coin;
+  const signal = req.query.signal;
+  const from   = req.query.from;  // YYYY-MM-DD
+  const to     = req.query.to;    // YYYY-MM-DD
   const offset = (page - 1) * limit;
 
-  let where = '';
+  const conds  = [];
   const params = [];
 
   if (coin) {
-    where = 'WHERE coin_id = ?';
-    params.push(coin);
+    // coin_sym veya coin_id ile eşleşebilir
+    conds.push('(coin_id = ? OR coin_sym = ?)');
+    params.push(coin, coin);
   }
+  if (signal) {
+    conds.push('signal = ?');
+    params.push(signal);
+  }
+  if (from) {
+    conds.push("date(created_at) >= ?");
+    params.push(from);
+  }
+  if (to) {
+    conds.push("date(created_at) <= ?");
+    params.push(to);
+  }
+
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
 
   const total = db.prepare(`SELECT COUNT(*) as n FROM analyses ${where}`).get(...params).n;
   const rows  = db.prepare(`

@@ -1,6 +1,41 @@
 # 🗺️ Crypto Analyst — Geliştirme Yol Haritası
 
-> Son güncelleme: 13 Nisan 2026 | Bakım + Özellik turu #1 tamamlandı
+> Son güncelleme: 14 Nisan 2026 | Admin Paneli + Fiyat Alarmı + Filtreler + Grafikler + Production Hazırlığı
+
+---
+
+## ✅ TAMAMLANDI — 14 Nisan 2026
+
+### 🎯 Admin Paneli
+- [x] `frontend/admin.html` — tab tabanlı dashboard (istatistikler, kullanıcılar, raporlar, API logları)
+- [x] `frontend/js/admin.js` — admin yardımcı fonksiyonları (not: admin.html inline script ile entegre)
+- [x] `backend/routes/admin.js` — `/api/admin/stats`, `/api/admin/users`, `/api/admin/logs`, `/api/admin/reports`, rol yönetimi
+- [x] `backend/server.js`'e `/api/admin` rotası eklendi
+- [x] Admin sayfası `role === 'admin'` korumalı (frontend + backend)
+
+### 🔔 Fiyat Alarm + Push Entegrasyonu
+- [x] `backend/automation/scheduler.js`'e 5 dakikada bir çalışan cron job eklendi
+- [x] CoinGecko `simple/price` endpoint'inden fiyatlar çekiliyor
+- [x] Tetiklenen alarmlar `is_active=0`, `triggered_at=now()` olarak güncelleniyor
+- [x] Push bildirimi `sendPushToUser()` ile kullanıcıya gönderiliyor
+
+### 🔍 Analiz Geçmişi — Gelişmiş Filtre
+- [x] `backend/routes/analysis.js` — `signal`, `from`, `to` query param desteği eklendi
+- [x] `frontend/history.html` — tarih aralığı filtreleri (başlangıç/bitiş) eklendi
+- [x] `frontend/js/history.js` — sunucu taraflı filtreleme, URL'e parametre yazma/okuma
+- [x] "CSV olarak indir" butonu — frontend JSON → CSV dönüşümü
+
+### 📊 Portföy Grafikleri
+- [x] `frontend/portfolio.html`'e Chart.js 4.4.1 CDN eklendi
+- [x] Pie chart — coin değer dağılımı
+- [x] Bar chart — coin bazında K/Z (USD)
+- [x] P&L özet kartları — USD + TRY (~38.5x), en iyi/kötü coin vurgusu
+
+### ⚙️ Production Hazırlık
+- [x] `.env.example` oluşturuldu (tüm değişkenler açıklamalı)
+- [x] `/api/health` genişletildi — DB durumu, son rapor tarihi, aktif kullanıcı sayısı
+- [x] `backend/middleware/security.js`'e HTTPS yönlendirme eklendi (NODE_ENV=production)
+- [x] `backend/server.js` middleware chain'e `httpsRedirect` eklendi
 
 ---
 
@@ -57,7 +92,7 @@
 
 ---
 
-## 📋 YARIN İÇİN PLAN (14 Nisan 2026)
+## ✅ TAMAMLANDI — PLAN (14 Nisan 2026)
 
 ### 🎯 Öncelik 1: Admin Paneli
 
@@ -127,14 +162,14 @@
 **Tahmini süre:** 1 saat  
 
 **TODO Listesi:**
-- [ ] `.env.example` dosyası oluştur (tüm değişkenler dokümante edilsin)
+- [x] `.env.example` dosyası oluşturuldu (tüm değişkenler açıklamalı)
 - [ ] `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` ayarları test et
 - [ ] `VAPID_PUBLIC_KEY` ve `VAPID_PRIVATE_KEY` `.env`'e ekle
 - [ ] `npm audit` çalıştır (güvenlik açıkları)
 - [ ] Rate limiter ayarlarını production için sıkılaştır
 - [ ] Error monitoring (Sentry veya benzeri) entegre et
-- [ ] Health check endpoint'ini genişlet (`/api/health` → DB durumu da içersin)
-- [ ] HTTPS yönlendirme + HSTS header
+- [x] Health check endpoint'i genişletildi (`/api/health` → DB durumu + son rapor + aktif kullanıcı)
+- [x] HTTPS yönlendirme eklendi (NODE_ENV=production)
 
 ---
 
@@ -167,16 +202,17 @@ crypto-analyst/
 │   │   ├── auth.js              ✅
 │   │   └── security.js          ✅ CSP düzeltildi
 │   ├── routes/
-│   │   ├── alerts.js            ✅ (push entegrasyonu YARIN)
-│   │   ├── analysis.js          ✅ /compare eklendi
+│   │   ├── admin.js             ✅ YENİ (stats, users, logs, reports)
+│   │   ├── alerts.js            ✅ push bildirimi entegre
+│   │   ├── analysis.js          ✅ signal/from/to filtresi eklendi
 │   │   ├── auth.js              ✅
-│   │   ├── email.js             ✅ YENİ
+│   │   ├── email.js             ✅
 │   │   ├── news.js              ✅
-│   │   ├── notifications.js     ✅ YENİ
-│   │   ├── payments.js          ✅ webhook güvenliği
+│   │   ├── notifications.js     ✅
+│   │   ├── payments.js          ✅
 │   │   ├── portfolio.js         ✅
-│   │   └── reports.js           ✅ /today eklendi
-│   └── server.js                ✅ tüm rotalar kayıtlı
+│   │   └── reports.js           ✅
+│   └── server.js                ✅ admin + HTTPS redirect eklendi
 │
 └── frontend/
     ├── css/
@@ -198,12 +234,13 @@ crypto-analyst/
     │   └── utils.js             ✅ YENİ
     ├── screenshots/
     │   └── desktop.png          ✅ YENİ
-    ├── compare.html             ✅ YENİ
-    ├── history.html             ✅
+    ├── admin.html               ✅ YENİ (tab dashboard)
+    ├── compare.html             ✅
+    ├── history.html             ✅ tarih filtresi + CSV
     ├── index.html               ✅ SEO + PWA + share btn
-    ├── manifest.json            ✅ YENİ
+    ├── manifest.json            ✅
     ├── news.html                ✅
-    ├── portfolio.html           ✅
+    ├── portfolio.html           ✅ Chart.js + P&L özeti
     ├── robots.txt               ✅ YENİ
     ├── sitemap.xml              ✅ YENİ
     └── sw.js                    ✅ YENİ (Service Worker)

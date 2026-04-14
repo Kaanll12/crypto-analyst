@@ -35,22 +35,88 @@ function fullDate(dateStr) {
 }
 function confClass(c) { return c >= 75 ? 'high' : c >= 50 ? 'medium' : 'low'; }
 
+// ─── BUILD API URL FROM FILTERS ───────────────────────────────────────────
+function buildApiUrl(page) {
+  const coin   = document.getElementById('filterCoin')?.value   || 'all';
+  const signal = document.getElementById('filterSignal')?.value || 'all';
+  const from   = document.getElementById('filterFrom')?.value   || '';
+  const to     = document.getElementById('filterTo')?.value     || '';
+
+  const params = new URLSearchParams();
+  params.set('limit', '50');
+  params.set('page', page || 1);
+  if (coin   !== 'all') params.set('coin',   coin);
+  if (signal !== 'all') params.set('signal', signal);
+  if (from)             params.set('from',   from);
+  if (to)               params.set('to',     to);
+
+  return '/api/analyses?' + params.toString();
+}
+
+// ─── SYNC FILTERS ↔ URL PARAMS ────────────────────────────────────────────
+function readFiltersFromURL() {
+  const sp = new URLSearchParams(window.location.search);
+  const coin   = sp.get('coin')   || 'all';
+  const signal = sp.get('signal') || 'all';
+  const from   = sp.get('from')   || '';
+  const to     = sp.get('to')     || '';
+
+  const coinEl   = document.getElementById('filterCoin');
+  const signalEl = document.getElementById('filterSignal');
+  const fromEl   = document.getElementById('filterFrom');
+  const toEl     = document.getElementById('filterTo');
+
+  if (coinEl)   coinEl.value   = coin;
+  if (signalEl) signalEl.value = signal;
+  if (fromEl)   fromEl.value   = from;
+  if (toEl)     toEl.value     = to;
+}
+
+function writeFiltersToURL() {
+  const coin   = document.getElementById('filterCoin')?.value   || 'all';
+  const signal = document.getElementById('filterSignal')?.value || 'all';
+  const from   = document.getElementById('filterFrom')?.value   || '';
+  const to     = document.getElementById('filterTo')?.value     || '';
+
+  const sp = new URLSearchParams();
+  if (coin   !== 'all') sp.set('coin',   coin);
+  if (signal !== 'all') sp.set('signal', signal);
+  if (from)             sp.set('from',   from);
+  if (to)               sp.set('to',     to);
+
+  const newUrl = window.location.pathname + (sp.toString() ? '?' + sp.toString() : '');
+  history.replaceState(null, '', newUrl);
+}
+
 // ─── LOAD HISTORY ─────────────────────────────────────────────────────────
-window.loadHistory = async function() {
+window.loadHistory = async function(page) {
+  page = page || 1;
+  currentPage = page;
   document.getElementById('histList').innerHTML =
     '<div class="hist-loading">Analizler yükleniyor…</div>';
   try {
-    const res = await window.apiFetch('/api/analyses?limit=100');
+    const url = buildApiUrl(page);
+    const res = await window.apiFetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
-    allAnalyses = data.data || [];
-    applyFilters();
+    allAnalyses  = data.data || [];
+    filteredList = allAnalyses; // server-side filtered
+    // pagination meta from server
+    _serverPagination = data.pagination;
     updateStats();
+    renderPageDirect();
+    const count = document.getElementById('filterCount');
+    count.textContent = data.pagination?.total > data.data?.length
+      ? `${data.pagination.total} sonuçtan ${data.data.length} gösteriliyor`
+      : `${data.data.length} sonuç`;
   } catch {
     document.getElementById('histList').innerHTML =
       '<div class="hist-empty">Analizler yüklenemedi.</div>';
   }
 };
+
+// Server tarafından dönen toplam sayfa bilgisi
+let _serverPagination = null;
 
 // ─── STATS ────────────────────────────────────────────────────────────────
 function updateStats() {
@@ -71,61 +137,107 @@ function updateStats() {
 
 // ─── FILTERS ──────────────────────────────────────────────────────────────
 window.applyFilters = function() {
-  const coin   = document.getElementById('filterCoin').value;
-  const signal = document.getElementById('filterSignal').value;
-  const time   = document.getElementById('filterTime').value;
-
-  filteredList = allAnalyses.filter(a => {
-    if (coin   !== 'all' && a.coin_sym !== coin) return false;
-    if (signal !== 'all' && (a.signal || 'neutral') !== signal) return false;
-    if (time   !== 'all') {
-      const d = new Date(a.created_at);
-      const now = new Date();
-      if (time === 'today' && d.toDateString() !== now.toDateString()) return false;
-      if (time === 'week'  && d < new Date(now - 7*86400000))  return false;
-      if (time === 'month' && d < new Date(now - 30*86400000)) return false;
-    }
-    return true;
-  });
-
-  currentPage = 1;
-  renderPage();
-  const count = document.getElementById('filterCount');
-  count.textContent = filteredList.length !== allAnalyses.length
-    ? `${filteredList.length} sonuç gösteriliyor`
-    : '';
+  writeFiltersToURL();
+  loadHistory(1); // sunucu tarafı filtreleme — yeniden yükle
 };
 
-// ─── RENDER PAGE ──────────────────────────────────────────────────────────
-function renderPage() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const end   = start + PAGE_SIZE;
-  const page  = filteredList.slice(start, end);
-  const totalPages = Math.ceil(filteredList.length / PAGE_SIZE);
+window.clearFilters = function() {
+  const coinEl   = document.getElementById('filterCoin');
+  const signalEl = document.getElementById('filterSignal');
+  const fromEl   = document.getElementById('filterFrom');
+  const toEl     = document.getElementById('filterTo');
+  if (coinEl)   coinEl.value   = 'all';
+  if (signalEl) signalEl.value = 'all';
+  if (fromEl)   fromEl.value   = '';
+  if (toEl)     toEl.value     = '';
+  writeFiltersToURL();
+  loadHistory(1);
+};
 
-  if (!page.length) {
+// ─── RENDER PAGE (client-side, current page items) ────────────────────────
+function renderPage() {
+  // Legacy: for modal index
+  renderPageDirect();
+}
+
+function renderPageDirect() {
+  if (!filteredList.length) {
     document.getElementById('histList').innerHTML =
       '<div class="hist-empty">Filtreye uyan analiz bulunamadı.</div>';
     document.getElementById('histPagination').style.display = 'none';
     return;
   }
 
-  document.getElementById('histList').innerHTML = page.map((a, i) =>
-    renderCard(a, start + i)
+  document.getElementById('histList').innerHTML = filteredList.map((a, i) =>
+    renderCard(a, i)
   ).join('');
 
-  // Pagination
+  // Server-side pagination
   const pag = document.getElementById('histPagination');
-  pag.style.display = totalPages > 1 ? 'flex' : 'none';
-  document.getElementById('pageInfo').textContent = `Sayfa ${currentPage} / ${totalPages}`;
-  document.getElementById('prevBtn').disabled = currentPage === 1;
-  document.getElementById('nextBtn').disabled = currentPage === totalPages;
+  const sp  = _serverPagination;
+  if (sp && sp.pages > 1) {
+    pag.style.display = 'flex';
+    document.getElementById('pageInfo').textContent = `Sayfa ${sp.page} / ${sp.pages}`;
+    document.getElementById('prevBtn').disabled = sp.page <= 1;
+    document.getElementById('nextBtn').disabled = sp.page >= sp.pages;
+  } else {
+    pag.style.display = 'none';
+  }
 }
 
 window.changePage = function(dir) {
-  currentPage += dir;
-  renderPage();
+  const sp = _serverPagination || { page: 1 };
+  loadHistory(sp.page + dir);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ─── CSV EXPORT ───────────────────────────────────────────────────────────
+window.downloadCSV = async function() {
+  // Tüm filtrelenmiş verileri çek (limit yüksek)
+  const coin   = document.getElementById('filterCoin')?.value   || 'all';
+  const signal = document.getElementById('filterSignal')?.value || 'all';
+  const from   = document.getElementById('filterFrom')?.value   || '';
+  const to     = document.getElementById('filterTo')?.value     || '';
+
+  const params = new URLSearchParams();
+  params.set('limit', '500');
+  params.set('page', '1');
+  if (coin   !== 'all') params.set('coin',   coin);
+  if (signal !== 'all') params.set('signal', signal);
+  if (from)             params.set('from',   from);
+  if (to)               params.set('to',     to);
+
+  try {
+    const res  = await window.apiFetch('/api/analyses?' + params.toString());
+    if (!res.ok) throw new Error('API hatası');
+    const data = await res.json();
+    const rows = data.data || [];
+    if (!rows.length) { toast('Dışa aktarılacak veri yok.', 'error'); return; }
+
+    const headers = ['id','coin_sym','coin_name','signal','confidence','risk_level','price_usd','change_24h','created_at'];
+    const csvLines = [
+      headers.join(','),
+      ...rows.map(r => headers.map(h => {
+        const val = r[h] != null ? r[h] : '';
+        // Virgül veya satır sonu içeriyorsa tırnak içine al
+        const s = String(val).replace(/"/g, '""');
+        return s.includes(',') || s.includes('\n') || s.includes('"') ? `"${s}"` : s;
+      }).join(',')),
+    ];
+
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `cryptoanalyst-gecmis-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast(`${rows.length} analiz CSV olarak indirildi.`, 'success');
+  } catch (e) {
+    toast('CSV indirme başarısız: ' + e.message, 'error');
+  }
 };
 
 // ─── RENDER CARD ──────────────────────────────────────────────────────────
@@ -247,7 +359,8 @@ window.onUserLogin = function(user) {
   document.getElementById('authArea').style.display   = 'none';
   document.getElementById('userArea').style.display   = 'flex';
   document.getElementById('userBadge').textContent    = user.username;
-  loadHistory();
+  readFiltersFromURL(); // URL'deki filter parametrelerini oku
+  loadHistory(1);
 };
 
 window.onUserLogout = function() {
