@@ -91,6 +91,14 @@ app.get('/api/health', (_req, res) => {
   const frontendPath = process.env.FRONTEND_PATH
     || path.join(__dirname, '..', 'frontend');
 
+  // sw.js: tarayıcı her zaman güncel versiyonu almalı — HTTP cache'i devre dışı bırak
+  app.get('/sw.js', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(frontendPath, 'sw.js'));
+  });
+
   app.use(express.static(frontendPath));
 
   // SEO: sitemap & robots her ortamda servis edilsin

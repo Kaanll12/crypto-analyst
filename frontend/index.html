@@ -716,10 +716,32 @@ document.addEventListener('analysisLoaded', function() {
 <!-- PWA Service Worker -->
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  var _swRefreshing = false;
+
+  // 1) SW'den gelen mesaj: yeni versiyon aktif → sayfayı yenile
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'SW_UPDATED' && !_swRefreshing) {
+      _swRefreshing = true;
+      console.log('[SW] Güncellendi (' + event.data.version + ') — sayfa yenileniyor...');
+      window.location.reload();
+    }
+  });
+
+  // 2) controllerchange: SW kontrolü devraldı → yenile
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    if (_swRefreshing) return;
+    _swRefreshing = true;
+    console.log('[SW] Controller değişti — sayfa yenileniyor...');
+    window.location.reload();
+  });
+
+  window.addEventListener('load', function() {
     navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[SW] Kayıtlı:', reg.scope))
-      .catch(err => console.warn('[SW] Kayıt hatası:', err));
+      .then(function(reg) {
+        console.log('[SW] Kayıtlı:', reg.scope);
+        reg.update().catch(function() {});
+      })
+      .catch(function(err) { console.warn('[SW] Kayıt hatası:', err); });
   });
 }
 </script>
