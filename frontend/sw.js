@@ -4,7 +4,7 @@
 'use strict';
 
 // Versiyon numarasını her deploy sonrası artır — eski önbellek otomatik temizlenir
-const CACHE_NAME    = 'crypto-analyst-v3';
+const CACHE_NAME    = 'crypto-analyst-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,6 +12,8 @@ const STATIC_ASSETS = [
   '/portfolio.html',
   '/history.html',
   '/compare.html',
+  '/profile.html',
+  '/reset-password.html',
   '/css/style.css',
   '/css/news.css',
   '/css/portfolio.css',
@@ -27,6 +29,7 @@ const STATIC_ASSETS = [
   '/js/notifications.js',
   '/js/sharecard.js',
   '/js/compare.js',
+  '/js/profile.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
