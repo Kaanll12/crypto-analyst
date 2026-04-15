@@ -54,17 +54,19 @@ router.get('/', optionalAuth, [
   query('to').optional().isDate(),
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('minConf').optional().isInt({ min: 0, max: 100 }),
 ], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const page   = parseInt(req.query.page)  || 1;
-  const limit  = parseInt(req.query.limit) || 10;
-  const coin   = req.query.coin;
-  const signal = req.query.signal;
-  const from   = req.query.from;  // YYYY-MM-DD
-  const to     = req.query.to;    // YYYY-MM-DD
-  const offset = (page - 1) * limit;
+  const page    = parseInt(req.query.page)    || 1;
+  const limit   = parseInt(req.query.limit)   || 10;
+  const coin    = req.query.coin;
+  const signal  = req.query.signal;
+  const from    = req.query.from;   // YYYY-MM-DD
+  const to      = req.query.to;     // YYYY-MM-DD
+  const minConf = parseInt(req.query.minConf) || 0;
+  const offset  = (page - 1) * limit;
 
   const conds  = [];
   const params = [];
@@ -85,6 +87,10 @@ router.get('/', optionalAuth, [
   if (to) {
     conds.push("date(created_at) <= ?");
     params.push(to);
+  }
+  if (minConf > 0) {
+    conds.push('confidence >= ?');
+    params.push(minConf);
   }
 
   const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';

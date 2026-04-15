@@ -144,6 +144,21 @@ function initDatabase() {
   // Stripe entegrasyonu için
   try { db.exec(`ALTER TABLE users ADD COLUMN stripe_customer_id TEXT`); } catch(_) {}
   try { db.exec(`ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT`); } catch(_) {}
+  // Şifre sıfırlama için
+  try { db.exec(`ALTER TABLE users ADD COLUMN reset_token TEXT`); } catch(_) {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN reset_token_expires TEXT`); } catch(_) {}
+  // Push bildirim geçmişi
+  try { db.exec(`
+    CREATE TABLE IF NOT EXISTS notification_history (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL,
+      title      TEXT,
+      body       TEXT,
+      tag        TEXT,
+      sent_at    TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `); } catch(_) {}
 
   console.log('✅ Veritabanı başlatıldı:', DB_PATH);
 }

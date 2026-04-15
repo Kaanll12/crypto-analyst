@@ -41,14 +41,16 @@ function buildApiUrl(page) {
   const signal = document.getElementById('filterSignal')?.value || 'all';
   const from   = document.getElementById('filterFrom')?.value   || '';
   const to     = document.getElementById('filterTo')?.value     || '';
+  const score  = parseInt(document.getElementById('filterScore')?.value || '0');
 
   const params = new URLSearchParams();
-  params.set('limit', '50');
+  params.set('limit', '20');
   params.set('page', page || 1);
   if (coin   !== 'all') params.set('coin',   coin);
   if (signal !== 'all') params.set('signal', signal);
   if (from)             params.set('from',   from);
   if (to)               params.set('to',     to);
+  if (score   > 0)      params.set('minConf', score);
 
   return '/api/analyses?' + params.toString();
 }
@@ -146,10 +148,13 @@ window.clearFilters = function() {
   const signalEl = document.getElementById('filterSignal');
   const fromEl   = document.getElementById('filterFrom');
   const toEl     = document.getElementById('filterTo');
+  const scoreEl  = document.getElementById('filterScore');
+  const scoreVal = document.getElementById('scoreVal');
   if (coinEl)   coinEl.value   = 'all';
   if (signalEl) signalEl.value = 'all';
   if (fromEl)   fromEl.value   = '';
   if (toEl)     toEl.value     = '';
+  if (scoreEl)  { scoreEl.value = '0'; if (scoreVal) scoreVal.textContent = '0%'; }
   writeFiltersToURL();
   loadHistory(1);
 };

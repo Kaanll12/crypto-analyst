@@ -168,4 +168,85 @@ router.put('/change-password',
   }
 );
 
+// ─── ŞİFREMİ UNUTTUM ────────────────────────────────────────────────────
+const crypto = require('crypto');
+
+router.post('/forgot-password',
+  authLimiter,
+  [body('email').isEmail().normalizeEmail()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Geçerli bir e-posta girin.' });
+
+    // Güvenlik: her zaman aynı yanıt ver (kullanıcı varlığını açıklama)
+    const { email } = req.body;
+    const user = db.prepare('SELECT id, username FROM users WHERE email = ? AND is_active = 1').get(email);
+
+    if (user) {
+      const token   = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 saat
+      db.prepare('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?')
+        .run(token, expires, user.id);
+
+      const resetUrl = `${process.env.APP_URL || 'https://your-app.railway.app'}/reset-password.html?token=${token}`;
+      console.log(`[forgot-password] Token oluşturuldu: ${user.username} — ${resetUrl}`);
+
+      // Email gönderimi (opsiyonel — SMTP ayarlıysa)
+      if (process.env.SMTP_USER) {
+        try {
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          });
+          await transporter.sendMail({
+            from: `"CryptoAnalyst" <${process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'CryptoAnalyst — Şifre Sıfırlama',
+            html: `<p>Merhaba <strong>${user.username}</strong>,</p>
+                   <p>Şifre sıfırlama linkiniz (1 saat geçerli):</p>
+                   <p><a href="${resetUrl}">${resetUrl}</a></p>
+                   <p>Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>`,
+          });
+        } catch (emailErr) {
+          console.warn('[forgot-password] E-posta gönderilemedi:', emailErr.message);
+        }
+      }
+    }
+
+    // Her durumda aynı yanıt
+    res.json({ message: 'E-posta adresiniz sistemde kayıtlıysa sıfırlama linki gönderildi.' });
+  }
+);
+
+// ─── ŞİFRE SIFIRLA ───────────────────────────────────────────────────────
+router.post('/reset-password',
+  authLimiter,
+  [
+    body('token').isString().isLength({ min: 64, max: 64 }),
+    body('newPassword')
+      .isLength({ min: 8 })
+      .matches(/[A-Z]/)
+      .matches(/[0-9]/),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: 'Geçersiz istek.' });
+
+    const { token, newPassword } = req.body;
+    const user = db.prepare(
+      `SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > datetime('now') AND is_active = 1`
+    ).get(token);
+
+    if (!user) return res.status(400).json({ error: 'Sıfırlama linki geçersiz veya süresi dolmuş.' });
+
+    const hash = await bcrypt.hash(newPassword, 12);
+    db.prepare('UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?')
+      .run(hash, user.id);
+
+    res.json({ message: 'Şifreniz başarıyla sıfırlandı. Giriş yapabilirsiniz.' });
+  }
+);
+
 module.exports = router;

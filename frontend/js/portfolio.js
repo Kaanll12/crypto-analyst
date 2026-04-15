@@ -8,7 +8,17 @@ var COIN_COLORS  = window.COIN_COLORS;
 let portfolioData = null;
 let pieChartInstance = null;
 let barChartInstance = null;
-const TRY_RATE = 38.5; // yaklaşık USD → TRY dönüşüm kuru
+let TRY_RATE = 38.5; // başlangıç değeri — API'den güncellenecek
+
+// Dinamik kur çek
+(async function fetchTryRate() {
+  try {
+    const r = await fetch('/api/prices/rates');
+    if (!r.ok) return;
+    const json = await r.json();
+    if (json.data && json.data.TRY) TRY_RATE = json.data.TRY;
+  } catch (_) {}
+})();
 
 // ─── FORMAT ───────────────────────────────────────────────────────────────
 function fmt(n, dec) {

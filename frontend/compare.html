@@ -263,6 +263,7 @@
       <a href="/compare.html" class="active">Karşılaştır</a>
     </nav>
     <div class="header-actions">
+      <button class="theme-toggle" onclick="window.toggleTheme()" title="Temayı değiştir">☀️</button>
       <div class="market-pill"><span class="market-dot"></span><span>Canlı</span></div>
       <div id="authArea" class="auth-btns">
         <button class="btn-ghost" id="loginNavBtn">Giriş</button>
@@ -325,6 +326,25 @@
   <div id="compareResult" style="display:none">
     <div class="compare-grid" id="compareGrid"></div>
     <div class="compare-verdict" id="compareVerdict"></div>
+
+    <!-- Trend Grafikleri -->
+    <div id="trendSection" style="margin-top:28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <h3 style="font-size:14px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.06em">📈 Fiyat Trendi</h3>
+        <div style="display:flex;gap:8px">
+          <button onclick="loadTrend(1)"  id="trendBtn1"  class="btn-ghost" style="font-size:12px;padding:5px 12px">24s</button>
+          <button onclick="loadTrend(7)"  id="trendBtn7"  class="btn-ghost" style="font-size:12px;padding:5px 12px;border-color:var(--accent);color:var(--accent)">7G</button>
+          <button onclick="loadTrend(14)" id="trendBtn14" class="btn-ghost" style="font-size:12px;padding:5px 12px">14G</button>
+          <button onclick="loadTrend(30)" id="trendBtn30" class="btn-ghost" style="font-size:12px;padding:5px 12px">30G</button>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px">
+        <div style="position:relative;height:260px">
+          <canvas id="trendChart"></canvas>
+        </div>
+        <div id="trendLoading" style="text-align:center;color:var(--fg-muted);font-size:13px;padding:10px;display:none">Yükleniyor…</div>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -333,6 +353,7 @@
   <p>© 2025 CryptoAnalyst — Yapay zeka analizleri yatırım tavsiyesi değildir.</p>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <script src="js/api.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>

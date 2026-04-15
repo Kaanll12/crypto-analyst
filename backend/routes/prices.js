@@ -106,4 +106,83 @@ router.get('/:coinId', async (req, res) => {
   }
 });
 
+// ─── GET /api/prices/history/:coinId/:days ────────────────────────────────────
+// CoinGecko market_chart proxy — 5 dakika cache
+const historyCache = {};
+const HISTORY_TTL  = 5 * 60 * 1000;
+
+router.get('/history/:coinId/:days', async (req, res) => {
+  const coinId = req.params.coinId.toLowerCase();
+  const days   = parseInt(req.params.days) || 7;
+
+  if (!COINS.includes(coinId)) {
+    return res.status(404).json({ error: 'Desteklenmeyen coin.' });
+  }
+  if (![1, 7, 14, 30].includes(days)) {
+    return res.status(400).json({ error: 'Geçerli gün: 1, 7, 14, 30.' });
+  }
+
+  const key = `${coinId}_${days}`;
+  const now  = Date.now();
+  const hit  = historyCache[key];
+  if (hit && (now - hit.ts) < HISTORY_TTL) {
+    return res.json({ data: hit.data, cached: true });
+  }
+
+  try {
+    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
+                `?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : 'daily'}`;
+    const r = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (r.status === 429) {
+      if (hit) return res.json({ data: hit.data, cached: true, stale: true });
+      return res.status(429).json({ error: 'Rate limit. Kısa süre sonra tekrar deneyin.' });
+    }
+    if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
+
+    const raw = await r.json();
+    // Sadece [timestamp, price] dizisini normalize et
+    const prices = (raw.prices || []).map(([ts, price]) => ({
+      t: ts,
+      p: +price.toFixed(4),
+    }));
+
+    historyCache[key] = { data: prices, ts: Date.now() };
+    res.json({ data: prices, cached: false });
+  } catch (err) {
+    if (hit) return res.json({ data: hit.data, cached: true, stale: true });
+    res.status(503).json({ error: 'Geçmiş veri alınamadı.', detail: err.message });
+  }
+});
+
+// ─── GET /api/prices/rates ────────────────────────────────────────────────────
+// USD/TRY kuru — 1 saatlik cache
+let ratesCache = { data: null, ts: 0 };
+const RATES_TTL = 60 * 60 * 1000; // 1 saat
+
+router.get('/rates', async (_req, res) => {
+  const now = Date.now();
+  if (ratesCache.data && (now - ratesCache.ts) < RATES_TTL) {
+    return res.json({ data: ratesCache.data, cached: true });
+  }
+  try {
+    // ExchangeRate-API ücretsiz tier
+    const r = await fetch(
+      'https://open.er-api.com/v6/latest/USD',
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) throw new Error(`ExchangeRate-API HTTP ${r.status}`);
+    const json = await r.json();
+    const rates = { TRY: json.rates?.TRY || 38.5, EUR: json.rates?.EUR || 0.92 };
+    ratesCache = { data: rates, ts: Date.now() };
+    res.json({ data: rates, cached: false });
+  } catch (err) {
+    // Cache varsa stale dön
+    if (ratesCache.data) return res.json({ data: ratesCache.data, cached: true, stale: true });
+    res.json({ data: { TRY: 38.5, EUR: 0.92 }, cached: false, fallback: true });
+  }
+});
+
 module.exports = router;

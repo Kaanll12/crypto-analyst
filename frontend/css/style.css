@@ -57,6 +57,47 @@
   --mono: 'Geist Mono', ui-monospace, monospace;
 }
 
+/* ─── LIGHT MOD ─────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:          #f4f6fb;
+  --bg-card:     #ffffff;
+  --bg-card-2:   #f0f2f8;
+  --bg-secondary:#e8eaf2;
+
+  --fg:          #0f1117;
+  --fg-muted:    #5a6080;
+  --fg-subtle:   #8890a8;
+
+  --border:      #dde0ec;
+  --border-mid:  #c8cce0;
+
+  --bullish:     oklch(0.50 0.18 145);
+  --bullish-dim: oklch(0.50 0.18 145 / 0.10);
+  --bullish-border: oklch(0.50 0.18 145 / 0.30);
+
+  --bearish:     oklch(0.50 0.22 25);
+  --bearish-dim: oklch(0.50 0.22 25 / 0.10);
+  --bearish-border: oklch(0.50 0.22 25 / 0.30);
+
+  --neutral:     oklch(0.52 0.12 60);
+  --neutral-dim: oklch(0.52 0.12 60 / 0.10);
+  --neutral-border: oklch(0.52 0.12 60 / 0.30);
+}
+
+/* Tema geçiş animasyonu */
+body, body * { transition: background-color .2s, border-color .2s, color .1s; }
+
+/* Tema toggle butonu */
+.theme-toggle {
+  width: 34px; height: 34px; border-radius: var(--r-md);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--fg-muted); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 16px;
+  transition: border-color .2s, color .2s, background .2s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: var(--border-mid); color: var(--fg); }
+
 /* ─── RESET ──────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }

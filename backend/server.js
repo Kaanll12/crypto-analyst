@@ -62,11 +62,14 @@ app.get('/api/health', (_req, res) => {
   let dbStatus = 'ok';
   let lastReport = null;
   let activeUsers = 0;
+  let heartbeat = null;
   try {
     db.prepare('SELECT 1').get();
     const rpt = db.prepare("SELECT report_date FROM daily_reports ORDER BY report_date DESC LIMIT 1").get();
     lastReport = rpt?.report_date || null;
     activeUsers = db.prepare("SELECT COUNT(*) as n FROM users WHERE is_active = 1").get().n;
+    const hbRow = db.prepare("SELECT value FROM settings WHERE key = 'scheduler_heartbeat'").get();
+    heartbeat = hbRow?.value || null;
   } catch (e) {
     dbStatus = 'error';
   }
@@ -79,6 +82,7 @@ app.get('/api/health', (_req, res) => {
     activeUsers,
     stripe: !!process.env.STRIPE_SECRET_KEY,
     vapid: !!(process.env.VAPID_PUBLIC_KEY || process.env.VAPID_PRIVATE_KEY),
+    schedulerHeartbeat: heartbeat,
   });
 });
 

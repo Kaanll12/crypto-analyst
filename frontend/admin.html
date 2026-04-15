@@ -17,6 +17,10 @@
     .stat-box .val { font-size: 1.8rem; font-weight: 700; color: var(--accent); font-family: 'Geist Mono',monospace; }
     .stat-box .lbl { font-size: .75rem; color: var(--fg-muted); margin-top: 4px; }
     .section-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 20px; margin-bottom: 20px; }
+    .admin-input { padding: 7px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--fg); font-size: 13px; font-family: var(--font); }
+    .admin-input:focus { outline: none; border-color: var(--accent); }
+    .admin-btn-ghost { padding: 7px 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--fg-muted); font-size: 12px; cursor: pointer; }
+    .admin-btn-ghost:hover { border-color: var(--border-mid); color: var(--fg); }
     .section-card h3 { font-size: .9rem; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
     .admin-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
     .admin-table th { text-align: left; padding: 8px 10px; color: var(--fg-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
@@ -72,6 +76,7 @@
       <a href="/admin.html" style="color:var(--accent)">Admin</a>
     </nav>
     <div class="header-actions">
+      <button class="theme-toggle" onclick="window.toggleTheme()" title="Temayı değiştir">☀️</button>
       <div id="userArea" style="display:none" class="auth-btns">
         <div class="user-chip" id="userBadge"></div>
         <button class="btn-ghost" onclick="logout()">Çıkış</button>
@@ -157,7 +162,26 @@
 
     <!-- LOGLAR -->
     <div class="tab-content" id="tab-logs">
-      <div class="section-card" style="padding:0;overflow:auto;max-height:600px">
+      <!-- Log Filtresi -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <input id="logFilterEndpoint" class="admin-input" type="text" placeholder="Endpoint filtrele (örn: /api/analyses)" style="flex:1;min-width:200px" oninput="filterLogs()"/>
+        <select id="logFilterMethod" class="admin-input" onchange="filterLogs()" style="width:auto">
+          <option value="">Tüm Metodlar</option>
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+        <select id="logFilterStatus" class="admin-input" onchange="filterLogs()" style="width:auto">
+          <option value="">Tüm Statuslar</option>
+          <option value="2xx">2xx (Başarılı)</option>
+          <option value="4xx">4xx (Client Hata)</option>
+          <option value="5xx">5xx (Server Hata)</option>
+        </select>
+        <button class="admin-btn-ghost" onclick="clearLogFilters()">Temizle</button>
+        <span id="logCount" style="color:var(--fg-muted);font-size:12px;margin-left:auto"></span>
+      </div>
+      <div class="section-card" style="padding:0;overflow:auto;max-height:560px">
         <table class="admin-table log-row" id="logsTable">
           <thead><tr><th>Endpoint</th><th>Method</th><th>Status</th><th>Ms</th><th>IP</th><th>Zaman</th></tr></thead>
           <tbody></tbody>
@@ -315,23 +339,57 @@ async function loadReports() {
 }
 
 // ─── LOGS
+let _allLogs = [];
+
 async function loadLogs() {
   try {
     const r = await window.apiFetch('/api/admin/logs');
     const d = await r.json();
-    const tbody = document.querySelector('#logsTable tbody');
-    tbody.innerHTML = d.data.map(l =>
-      `<tr class="log-row">
-        <td>${l.endpoint}</td>
-        <td>${l.method}</td>
-        <td class="${l.status_code < 400 ? 'status-ok' : 'status-err'}">${l.status_code}</td>
-        <td>${l.duration_ms}</td>
-        <td style="color:var(--fg-muted)">${l.ip || '—'}</td>
-        <td style="color:var(--fg-muted)">${new Date(l.created_at).toLocaleString('tr-TR')}</td>
-      </tr>`
-    ).join('');
+    _allLogs = d.data || [];
+    renderLogs(_allLogs);
   } catch(e) {}
 }
+
+function renderLogs(logs) {
+  const tbody = document.querySelector('#logsTable tbody');
+  tbody.innerHTML = logs.map(l =>
+    `<tr class="log-row">
+      <td>${l.endpoint}</td>
+      <td>${l.method}</td>
+      <td class="${l.status_code < 400 ? 'status-ok' : 'status-err'}">${l.status_code}</td>
+      <td>${l.duration_ms}</td>
+      <td style="color:var(--fg-muted)">${l.ip || '—'}</td>
+      <td style="color:var(--fg-muted)">${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+    </tr>`
+  ).join('');
+  const countEl = document.getElementById('logCount');
+  if (countEl) countEl.textContent = `${logs.length} / ${_allLogs.length} kayıt`;
+}
+
+window.filterLogs = function() {
+  const ep  = (document.getElementById('logFilterEndpoint')?.value || '').toLowerCase();
+  const mth = document.getElementById('logFilterMethod')?.value   || '';
+  const st  = document.getElementById('logFilterStatus')?.value   || '';
+  const filtered = _allLogs.filter(l => {
+    if (ep  && !l.endpoint?.toLowerCase().includes(ep)) return false;
+    if (mth && l.method !== mth) return false;
+    if (st === '2xx' && (l.status_code < 200 || l.status_code > 299)) return false;
+    if (st === '4xx' && (l.status_code < 400 || l.status_code > 499)) return false;
+    if (st === '5xx' && (l.status_code < 500 || l.status_code > 599)) return false;
+    return true;
+  });
+  renderLogs(filtered);
+};
+
+window.clearLogFilters = function() {
+  const ep  = document.getElementById('logFilterEndpoint');
+  const mth = document.getElementById('logFilterMethod');
+  const st  = document.getElementById('logFilterStatus');
+  if (ep)  ep.value  = '';
+  if (mth) mth.value = '';
+  if (st)  st.value  = '';
+  renderLogs(_allLogs);
+};
 
 function showNoAccess() {
   document.getElementById('noAccess').style.display = '';

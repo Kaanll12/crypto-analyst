@@ -247,3 +247,135 @@ function renderSkeletons() {
   }
   if (c1 && c2) window.startCompare();
 })();
+
+// ─── TREND GRAFİĞİ ────────────────────────────────────────────────────────
+let trendChartInstance = null;
+let _currentC1 = null;
+let _currentC2 = null;
+let _activeDays = 7;
+
+// startCompare() bittikten sonra coin ID'lerini sakla
+const _origStartCompare = window.startCompare;
+window.startCompare = async function() {
+  const v1 = document.getElementById('coin1Select')?.value || '';
+  const v2 = document.getElementById('coin2Select')?.value || '';
+  _currentC1 = v1.split('|')[0];
+  _currentC2 = v2.split('|')[0];
+  await _origStartCompare();
+  // Karşılaştırma tamamlandıktan sonra 7 günlük trend yükle
+  if (_currentC1 && _currentC2) loadTrend(_activeDays);
+};
+
+window.loadTrend = async function(days) {
+  if (!_currentC1 || !_currentC2) return;
+  _activeDays = days;
+
+  // Aktif buton stili
+  [1, 7, 14, 30].forEach(d => {
+    const btn = document.getElementById('trendBtn' + d);
+    if (!btn) return;
+    if (d === days) {
+      btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)';
+    } else {
+      btn.style.borderColor = ''; btn.style.color = '';
+    }
+  });
+
+  const loadEl = document.getElementById('trendLoading');
+  if (loadEl) loadEl.style.display = '';
+
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`/api/prices/history/${_currentC1}/${days}`).then(r => r.json()),
+      fetch(`/api/prices/history/${_currentC2}/${days}`).then(r => r.json()),
+    ]);
+
+    const pts1 = r1.data || [];
+    const pts2 = r2.data || [];
+    if (!pts1.length && !pts2.length) return;
+
+    // Zaman etiketleri (coin1'den al)
+    const labels = pts1.map(p => {
+      const d = new Date(p.t);
+      return days <= 1
+        ? d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    });
+
+    // Normalize: ilk noktayı 100 kabul et (yüzde değişim göster)
+    function normalize(pts) {
+      const base = pts[0]?.p || 1;
+      return pts.map(p => +((p.p / base * 100) - 100).toFixed(3));
+    }
+
+    const c1sym = (document.getElementById('coin1Select')?.value || '').split('|')[1] || 'Coin1';
+    const c2sym = (document.getElementById('coin2Select')?.value || '').split('|')[1] || 'Coin2';
+    const c1col = COIN_COLORS[c1sym] || '#1A56DB';
+    const c2col = COIN_COLORS[c2sym] || '#F97316';
+
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+
+    trendChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: c1sym + ' (% değişim)',
+            data: normalize(pts1),
+            borderColor: c1col,
+            backgroundColor: c1col + '18',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.35,
+            fill: false,
+          },
+          {
+            label: c2sym + ' (% değişim)',
+            data: normalize(pts2),
+            borderColor: c2col,
+            backgroundColor: c2col + '18',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.35,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            labels: { color: '#9ca3af', font: { size: 12 }, boxWidth: 14 },
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label.split(' ')[0]}: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw}%`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#9ca3af', font: { size: 11 }, maxTicksLimit: 8 },
+            grid: { color: 'rgba(255,255,255,.04)' },
+          },
+          y: {
+            ticks: {
+              color: '#9ca3af', font: { size: 11 },
+              callback: v => (v >= 0 ? '+' : '') + v + '%',
+            },
+            grid: { color: 'rgba(255,255,255,.04)' },
+          },
+        },
+      },
+    });
+  } catch (e) {
+    console.warn('Trend grafik hatası:', e.message);
+  } finally {
+    if (loadEl) loadEl.style.display = 'none';
+  }
+};

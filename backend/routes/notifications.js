@@ -227,8 +227,32 @@ async function sendPushToUser(userId, payload) {
       payload
     ))
   );
-  return results.filter(r => r.status === 'fulfilled').length;
+  const sent = results.filter(r => r.status === 'fulfilled').length;
+
+  // Bildirim geçmişine kaydet
+  if (sent > 0) {
+    try {
+      const { v4: uuidv4 } = require('uuid');
+      db.prepare(
+        `INSERT INTO notification_history (id, user_id, title, body, tag) VALUES (?, ?, ?, ?, ?)`
+      ).run(uuidv4(), userId, payload.title || '', payload.body || '', payload.tag || null);
+    } catch(_) {}
+  }
+  return sent;
 }
+
+// ─── GETİRİM GEÇMİŞİ ─────────────────────────────────────────────────────────
+router.get('/history', requireAuth, (req, res) => {
+  try {
+    const rows = db.prepare(
+      `SELECT id, title, body, tag, sent_at FROM notification_history
+       WHERE user_id = ? ORDER BY sent_at DESC LIMIT 50`
+    ).all(req.user.id);
+    res.json({ data: rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Bildirim geçmişi alınamadı.' });
+  }
+});
 
 async function sendPushToAll(payload) {
   ensureVapidKeys();

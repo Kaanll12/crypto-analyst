@@ -107,7 +107,18 @@ function updateNotifyUI(enabled) {
 
 // ─── BAŞLANGIÇTA DURUMU KONTROL ET ───────────────────────────────────────────
 (async function initNotify() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  // Tarayıcı desteği yok
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    _showPushUnsupportedWarning('Tarayıcınız Push bildirimlerini desteklemiyor.');
+    return;
+  }
+
+  // Bildirim izni kalıcı olarak reddedilmişse uyar
+  if (Notification.permission === 'denied') {
+    _showPushUnsupportedWarning('Bildirim izni reddedildi. Tarayıcı ayarlarından etkinleştirin.');
+    updateNotifyUI(false);
+    return;
+  }
 
   try {
     const reg    = await navigator.serviceWorker.ready;
@@ -122,3 +133,23 @@ function updateNotifyUI(enabled) {
     }
   } catch (_) {}
 })();
+
+function _showPushUnsupportedWarning(msg) {
+  const btn = document.getElementById('notifyToggleBtn');
+  if (btn) {
+    btn.disabled    = true;
+    btn.textContent = '🔕 Bildirim Kullanılamıyor';
+    btn.title       = msg;
+    btn.style.opacity = '0.5';
+    btn.style.cursor  = 'not-allowed';
+  }
+  // Alarm listesi varsa küçük uyarı göster
+  const alertList = document.getElementById('alertList');
+  if (alertList && !document.getElementById('pushWarnBanner')) {
+    const warn = document.createElement('div');
+    warn.id        = 'pushWarnBanner';
+    warn.style.cssText = 'font-size:11px;color:var(--neutral);background:var(--neutral-dim);border:1px solid var(--neutral-border);border-radius:8px;padding:8px 12px;margin-top:8px;';
+    warn.textContent   = '⚠️ ' + msg;
+    alertList.parentNode.insertBefore(warn, alertList);
+  }
+}

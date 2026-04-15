@@ -156,10 +156,34 @@ function startScheduler() {
     const deleted = db.prepare(`
       DELETE FROM api_logs WHERE created_at < datetime('now', '-90 days')
     `).run();
-    console.log(`🧹 Haftalık temizlik: ${deleted.changes} eski log silindi`);
+    // 30 günden eski bildirim geçmişini temizle
+    try {
+      const delNotif = db.prepare(`
+        DELETE FROM notification_history WHERE sent_at < datetime('now', '-30 days')
+      `).run();
+      console.log(`🧹 Haftalık temizlik: ${deleted.changes} log, ${delNotif.changes} bildirim geçmişi silindi`);
+    } catch(_) {
+      console.log(`🧹 Haftalık temizlik: ${deleted.changes} eski log silindi`);
+    }
   }, { timezone: 'Europe/Istanbul' });
 
-  console.log('✅ Tüm zamanlayıcılar aktif (günlük rapor + haftalık özet + fiyat alarmı + temizlik)\n');
+  // ─── HEARTBEAT (Her 5 dk — scheduler sağlık logu) ─────────────────────
+  let _heartbeatCount = 0;
+  cron.schedule('*/5 * * * *', () => {
+    _heartbeatCount++;
+    try {
+      const db = require('../config/database');
+      db.prepare(`
+        INSERT OR REPLACE INTO settings (key, value)
+        VALUES ('scheduler_heartbeat', ?)
+      `).run(new Date().toISOString());
+      if (_heartbeatCount % 12 === 0) { // Her saatte bir logla
+        console.log(`💓 Scheduler heartbeat #${_heartbeatCount} — ${new Date().toISOString()}`);
+      }
+    } catch(_) {}
+  });
+
+  console.log('✅ Tüm zamanlayıcılar aktif (günlük rapor + haftalık özet + fiyat alarmı + temizlik + heartbeat)\n');
 }
 
 module.exports = { startScheduler };
