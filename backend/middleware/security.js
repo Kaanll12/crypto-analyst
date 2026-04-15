@@ -11,10 +11,15 @@ const helmetMiddleware = helmet({
     directives: {
       defaultSrc:     ["'self'"],
       scriptSrc:      ["'self'", "'unsafe-inline'", 'cdn.paddle.com', 'fonts.googleapis.com', 'cdnjs.cloudflare.com'],
+      // script-src-attr: HTML'deki onclick/onkeydown gibi inline handler'lara izin ver
+      // (Helmet 7+ bu directive'i ayrıca 'none' olarak set eder — açıkça override etmeliyiz)
+      scriptSrcAttr:  ["'unsafe-inline'"],
       styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'fonts.gstatic.com'],
       fontSrc:        ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com'],
       imgSrc:         ["'self'", 'data:', 'blob:', 'https:'],
-      connectSrc:     ["'self'", 'api.coingecko.com', 'pro-api.coingecko.com', 'sandbox-api.paddle.com', 'api.paddle.com'],
+      connectSrc:     ["'self'", 'api.coingecko.com', 'pro-api.coingecko.com',
+                       'sandbox-api.paddle.com', 'api.paddle.com',
+                       'open.er-api.com'],   // TRY kuru için
       frameSrc:       ["'self'", 'paddle.com', '*.paddle.com'],
       objectSrc:      ["'none'"],
       upgradeInsecureRequests: [],
