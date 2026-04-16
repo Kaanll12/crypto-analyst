@@ -84,6 +84,7 @@
       <a href="/news.html">Haberler</a>
       <a href="/portfolio.html">Portföy</a>
       <a href="/history.html">Geçmiş</a>
+      <a href="/compare.html">Karşılaştır</a>
       <a href="#hakkinda">Hakkında</a>
     </nav>
 
@@ -98,7 +99,7 @@
         <button class="btn-primary" onclick="openModal('registerModal')">Başla</button>
       </div>
       <div id="userArea" style="display:none" class="auth-btns">
-        <div class="user-chip" id="userBadge"></div>
+        <a href="/profile.html" class="user-chip" id="userBadge" title="Profil sayfasına git"></a>
         <button class="btn-ghost" onclick="logout()">Çıkış</button>
       </div>
       <button class="hamburger" id="hamburger" onclick="toggleMenu()">
@@ -573,6 +574,7 @@
     </div>
     <button class="btn-primary full" id="loginBtn" onclick="login()">Giriş Yap</button>
     <p class="modal-switch">Hesabın yok mu? <a onclick="switchModal('loginModal','registerModal')">Kayıt ol →</a></p>
+    <p class="modal-switch" style="margin-top:6px"><a href="/reset-password.html" style="font-size:12px;color:var(--fg-muted)">Şifremi unuttum</a></p>
   </div>
 </div>
 
