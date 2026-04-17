@@ -251,10 +251,14 @@ router.post('/reset-password',
 
     const { token, newPassword } = req.body;
     const user = db.prepare(
-      `SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > datetime('now') AND is_active = 1`
+      `SELECT id, password FROM users WHERE reset_token = ? AND reset_token_expires > datetime('now') AND is_active = 1`
     ).get(token);
 
     if (!user) return res.status(400).json({ error: 'Sıfırlama linki geçersiz veya süresi dolmuş.' });
+
+    // Eski şifre ile aynı mı kontrol et
+    const isSame = await bcrypt.compare(newPassword, user.password);
+    if (isSame) return res.status(400).json({ error: 'Yeni şifreniz eski şifrenizle aynı olamaz.' });
 
     const hash = await bcrypt.hash(newPassword, 12);
     db.prepare('UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?')
