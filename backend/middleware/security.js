@@ -55,7 +55,7 @@ const corsMiddleware = cors({
 // ─── RATE LIMIT ───────────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+  max: parseInt(process.env.RATE_LIMIT_MAX) || 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Çok fazla istek. Lütfen bekleyin.' },
@@ -63,7 +63,7 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 20,
   message: { error: 'Çok fazla giriş denemesi. 15 dakika bekleyin.' },
   skipSuccessfulRequests: true,
 });
