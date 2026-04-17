@@ -37,6 +37,8 @@ const corsMiddleware = cors({
       /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
       /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
       /\.railway\.app$/.test(origin) ||
+      origin === 'https://crypto-analyst.app' ||
+      origin === 'https://www.crypto-analyst.app' ||
       (process.env.ALLOWED_ORIGIN && origin === process.env.ALLOWED_ORIGIN)
     ) {
       callback(null, true);
