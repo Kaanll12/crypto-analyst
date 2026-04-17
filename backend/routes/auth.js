@@ -191,24 +191,39 @@ router.post('/forgot-password',
       const resetUrl = `${process.env.APP_URL || 'https://your-app.railway.app'}/reset-password.html?token=${token}`;
       console.log(`[forgot-password] Token oluşturuldu: ${user.username} — ${resetUrl}`);
 
-      // Email gönderimi (opsiyonel — SMTP ayarlıysa)
-      if (process.env.SMTP_USER) {
+      // Email gönderimi — Resend HTTP API
+      if (process.env.SMTP_PASS) {
         try {
-          const nodemailer = require('nodemailer');
-          const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: parseInt(process.env.SMTP_PORT) || 587,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          const emailRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.SMTP_PASS}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: process.env.SMTP_FROM || 'CryptoAnalyst <noreply@crypto-analyst.app>',
+              to: [email],
+              subject: 'CryptoAnalyst — Şifre Sıfırlama',
+              html: `
+                <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0f1117;color:#fff;border-radius:12px">
+                  <h2 style="color:#1A56DB;margin-bottom:16px">🔑 Şifre Sıfırlama</h2>
+                  <p>Merhaba <strong>${user.username}</strong>,</p>
+                  <p style="color:#aaa;margin:16px 0">Şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.</p>
+                  <a href="${resetUrl}" style="display:inline-block;background:#1A56DB;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:8px 0">Şifremi Sıfırla</a>
+                  <p style="color:#666;font-size:12px;margin-top:24px">Bu link 1 saat geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>
+                  <hr style="border-color:#333;margin:24px 0"/>
+                  <p style="color:#555;font-size:11px">© 2026 CryptoAnalyst — crypto-analyst.app</p>
+                </div>
+              `,
+            }),
+            signal: AbortSignal.timeout(10000),
           });
-          await transporter.sendMail({
-            from: `"CryptoAnalyst" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: 'CryptoAnalyst — Şifre Sıfırlama',
-            html: `<p>Merhaba <strong>${user.username}</strong>,</p>
-                   <p>Şifre sıfırlama linkiniz (1 saat geçerli):</p>
-                   <p><a href="${resetUrl}">${resetUrl}</a></p>
-                   <p>Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz.</p>`,
-          });
+          if (!emailRes.ok) {
+            const errBody = await emailRes.text();
+            console.warn('[forgot-password] Resend hata:', emailRes.status, errBody);
+          } else {
+            console.log('[forgot-password] E-posta gönderildi:', email);
+          }
         } catch (emailErr) {
           console.warn('[forgot-password] E-posta gönderilemedi:', emailErr.message);
         }
