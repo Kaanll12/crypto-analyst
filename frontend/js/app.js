@@ -121,20 +121,26 @@ async function fetchPrices() {
 }
 
 function renderTicker() {
-  const items = [...COINS, ...COINS].map(c => {
+  const makeItem = c => {
     const d = prices[c.id] || {};
-    const ch = d.price_change_percentage_24h || 0;
+    const ch = typeof d.price_change_percentage_24h === 'number' ? d.price_change_percentage_24h : null;
     const price = d.current_price
       ? `$${d.current_price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
       : '—';
+    const chHtml = ch !== null
+      ? `<span class="${ch >= 0 ? 'ticker-up' : 'ticker-dn'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span>`
+      : '';
     return `<span class="ticker-item">
-      <span class="ticker-sym">${c.sym}/USDT</span>
+      <span class="ticker-avatar" style="color:${c.avatarColor}">${c.avatar}</span>
+      <span class="ticker-sym">${c.sym}</span>
       <span class="ticker-price">${price}</span>
-      <span class="${ch >= 0 ? 'ticker-up' : 'ticker-dn'}">${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%</span>
-      <span class="ticker-sep">|</span>
+      ${chHtml}
+      <span class="ticker-sep">·</span>
     </span>`;
-  }).join('');
-  document.getElementById('ticker').innerHTML = items;
+  };
+  // İki kopya — seamless loop için
+  const html = [...COINS, ...COINS].map(makeItem).join('');
+  document.getElementById('ticker').innerHTML = html;
 }
 
 function renderCoinTabs() {

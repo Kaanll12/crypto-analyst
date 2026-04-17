@@ -298,10 +298,13 @@ canvas { display: block; }
 }
 .ticker-track {
   display: flex; align-items: center; gap: 0;
-  overflow: hidden; white-space: nowrap;
-  animation: ticker 40s linear infinite;
+  white-space: nowrap; flex-shrink: 0;
+  animation: ticker 35s linear infinite;
+  will-change: transform;
 }
-.ticker-item { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; font-size: 12px; }
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-item { display: inline-flex; align-items: center; gap: 6px; padding: 0 20px; font-size: 12px; white-space: nowrap; }
+.ticker-avatar { font-size: 13px; }
 .ticker-sym { font-weight: 600; color: var(--fg-muted); font-family: var(--mono); }
 .ticker-price { color: var(--fg); font-family: var(--mono); }
 .ticker-up { color: var(--bullish); }
