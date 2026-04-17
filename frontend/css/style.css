@@ -1133,3 +1133,49 @@ canvas { display: block; }
 
 /* Upgrade box inner */
 .upgrade-box-inner { display: flex; align-items: flex-start; gap: 12px; }
+
+/* ═══ LOADING SKELETON ══════════════════════════════════════════════════ */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-card-2) 25%,
+    var(--bg-secondary) 50%,
+    var(--bg-card-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--r-sm);
+}
+.skeleton-text  { height: 14px; margin-bottom: 8px; }
+.skeleton-title { height: 20px; margin-bottom: 12px; width: 60%; }
+.skeleton-card  {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.skeleton-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.skeleton-lines { flex: 1; }
+
+/* ═══ COOKIE BANNER ═════════════════════════════════════════════════════ */
+#cookieBanner {
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

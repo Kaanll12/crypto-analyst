@@ -124,7 +124,14 @@ app.use((err, _req, res, _next) => {
 });
 
 app.use((_req, res) => {
-  res.status(404).json({ error: 'Endpoint bulunamadı.' });
+  // API istekleri için JSON, sayfa istekleri için 404.html
+  if (_req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint bulunamadı.' });
+  }
+  const p404 = path.join(frontendPath, '404.html');
+  res.status(404).sendFile(p404, (err) => {
+    if (err) res.status(404).send('Sayfa bulunamadı.');
+  });
 });
 
 // ─── SUNUCUYU BAŞLAT ─────────────────────────────────────────────────────

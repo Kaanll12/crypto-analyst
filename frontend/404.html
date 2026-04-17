@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>404 — Sayfa Bulunamadı | CryptoAnalyst</title>
+  <meta name="robots" content="noindex"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .error-wrap {
+      max-width: 480px;
+      width: 100%;
+    }
+    .error-code {
+      font-size: clamp(80px, 20vw, 140px);
+      font-weight: 800;
+      font-family: var(--mono);
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .error-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .error-sub {
+      color: var(--fg-muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .error-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .error-ticker {
+      margin-top: 48px;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      font-size: 13px;
+      color: var(--fg-muted);
+      font-family: var(--mono);
+    }
+    .error-ticker span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="error-wrap">
+  <div class="error-code">404</div>
+  <span class="error-icon">🔍</span>
+  <h1 class="error-title">Sayfa bulunamadı</h1>
+  <p class="error-sub">Aradığın sayfa taşınmış, silinmiş veya hiç var olmamış olabilir. Piyasalar gibi — bazen şeyler kaybolur.</p>
+  <div class="error-actions">
+    <a href="/" class="btn-primary" style="text-decoration:none;padding:10px 24px;border-radius:var(--r-md);font-weight:600;font-size:14px">
+      Ana Sayfaya Dön
+    </a>
+    <a href="/news.html" class="btn-ghost" style="text-decoration:none;padding:10px 24px;border-radius:var(--r-md);font-weight:600;font-size:14px">
+      Haberlere Git
+    </a>
+  </div>
+  <div class="error-ticker">
+    BTC • ETH • SOL • BNB • XRP • ADA<br/>
+    <span>AI analizleri devam ediyor...</span>
+  </div>
+</div>
+</body>
+</html>

@@ -747,5 +747,38 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- ═══ COOKIE BANNER ════════════════════════════════════════════════════ -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:14px 20px;background:var(--bg-card);border-top:1px solid var(--border);box-shadow:0 -4px 24px rgba(0,0,0,.3)">
+  <div style="max-width:960px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <p style="font-size:13px;color:var(--fg-muted);margin:0;line-height:1.5">
+        🍪 Deneyimini geliştirmek için çerezler kullanıyoruz. Siteyi kullanmaya devam ederek
+        <a href="/legal/privacy.html" style="color:var(--accent)">Gizlilik Politikamızı</a> kabul etmiş olursun.
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <button onclick="acceptCookies()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer">Kabul Et</button>
+      <button onclick="declineCookies()" style="padding:8px 16px;background:transparent;color:var(--fg-muted);border:1px solid var(--border);border-radius:var(--r-md);font-size:13px;cursor:pointer">Reddet</button>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  if (!localStorage.getItem('cookieConsent')) {
+    setTimeout(function() {
+      document.getElementById('cookieBanner').style.display = '';
+    }, 1500);
+  }
+  window.acceptCookies = function() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('cookieBanner').style.display = 'none';
+  };
+  window.declineCookies = function() {
+    localStorage.setItem('cookieConsent', 'declined');
+    document.getElementById('cookieBanner').style.display = 'none';
+  };
+})();
+</script>
 </body>
 </html>
