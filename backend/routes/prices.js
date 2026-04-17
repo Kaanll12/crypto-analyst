@@ -33,19 +33,17 @@ router.get('/', async (_req, res) => {
   try {
     const now = Date.now();
 
-    // Cache geçerliyse direkt dön
+    // Cache geçerliyse direkt dön (normalize edilmiş obje)
     if (cache.data && (now - cache.ts) < CACHE_TTL) {
       return res.json({ data: cache.data, cached: true, age: Math.floor((now - cache.ts) / 1000) });
     }
 
-    const data = await fetchFromCoinGecko();
 
-    // Cache güncelle
-    cache = { data, ts: Date.now() };
+    const raw = await fetchFromCoinGecko();
 
-    // Normalize — frontend'in beklediği format
+    // Normalize — frontend'in beklediği format (id → obje)
     const prices = {};
-    data.forEach(c => {
+    raw.forEach(c => {
       prices[c.id] = {
         id:                          c.id,
         symbol:                      c.symbol.toUpperCase(),
@@ -62,6 +60,9 @@ router.get('/', async (_req, res) => {
       };
     });
 
+    // Cache'i normalize edilmiş obje olarak sakla
+    cache = { data: prices, raw, ts: Date.now() };
+
     res.json({ data: prices, cached: false, age: 0 });
 
   } catch (err) {
@@ -69,11 +70,7 @@ router.get('/', async (_req, res) => {
     if (cache.data) {
       console.warn('[prices] CoinGecko hata, eski cache kullanılıyor:', err.message);
       return res.json({
-        data: (() => {
-          const p = {};
-          cache.data.forEach(c => { p[c.id] = c; });
-          return p;
-        })(),
+        data: cache.data,
         cached: true,
         stale: true,
         age: Math.floor((Date.now() - cache.ts) / 1000),
@@ -95,10 +92,12 @@ router.get('/:coinId', async (req, res) => {
   try {
     const now = Date.now();
     if (!cache.data || (now - cache.ts) >= CACHE_TTL) {
-      const data = await fetchFromCoinGecko();
-      cache = { data, ts: Date.now() };
+      const raw = await fetchFromCoinGecko();
+      const prices = {};
+      raw.forEach(c => { prices[c.id] = c; });
+      cache = { data: prices, raw, ts: Date.now() };
     }
-    const coin = cache.data.find(c => c.id === coinId);
+    const coin = cache.data[coinId];
     if (!coin) return res.status(404).json({ error: 'Coin bulunamadı.' });
     res.json({ data: coin });
   } catch (err) {
