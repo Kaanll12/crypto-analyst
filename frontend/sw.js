@@ -4,7 +4,7 @@
 'use strict';
 
 // Versiyon numarasını her deploy sonrası artır — eski önbellek otomatik temizlenir
-const CACHE_NAME    = 'crypto-analyst-v7';
+const CACHE_NAME    = 'crypto-analyst-v8';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -98,7 +98,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Statik varlıklar: Cache-First
+  // HTML sayfaları: Network-First (her zaman güncel sürüm gelsin)
+  if (event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          // Ağ yoksa önbellekten dön
+          return caches.match(event.request)
+            .then(cached => cached || caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
+  // CSS / JS / Resim: Cache-First (hızlı yüklensin)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -108,12 +128,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => {
-        // HTML sayfaları için offline fallback
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
-        }
-      });
+      }).catch(() => null);
     })
   );
 });
