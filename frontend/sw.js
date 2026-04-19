@@ -4,7 +4,7 @@
 'use strict';
 
 // Versiyon numarasını her deploy sonrası artır — eski önbellek otomatik temizlenir
-const CACHE_NAME    = 'crypto-analyst-v8';
+const CACHE_NAME    = 'crypto-analyst-v9';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -69,6 +69,12 @@ self.addEventListener('activate', (event) => {
 // ─── FETCH: Strateji belirle ──────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Dış kaynaklar (fonts, paddle, cdn): SW'den geçirme, direkt ağa git
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 408 })));
+    return;
+  }
 
   // API istekleri: Network-First (önce ağ, başarısız olursa offline yanıtı)
   if (url.pathname.startsWith('/api/')) {
