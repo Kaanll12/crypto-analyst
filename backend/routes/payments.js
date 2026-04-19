@@ -20,6 +20,7 @@ router.get('/plans', (_req, res) => {
   res.json({
     paddleEnabled: PADDLE_ENABLED,
     clientToken: process.env.PADDLE_CLIENT_TOKEN || null,
+    paddleEnv: process.env.PADDLE_ENV || 'production',
     plans: [
       {
         key: 'monthly',

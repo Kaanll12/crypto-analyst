@@ -16,7 +16,9 @@ function loadPaddleJS(clientToken) {
 
 function initPaddle(clientToken) {
   if (!clientToken || !window.Paddle) return;
-  window.Paddle.Environment.set('production'); // test için 'sandbox' yap
+  // PADDLE_ENV: 'sandbox' test için, 'production' canlı için
+  const paddleEnv = window.PADDLE_ENV || 'production';
+  if (paddleEnv === 'sandbox') window.Paddle.Environment.set('sandbox');
   window.Paddle.Initialize({
     token: clientToken,
     eventCallback: function(e) {
@@ -41,6 +43,7 @@ window.openPricingModal = async function () {
       if (res.ok) {
         plansData = await res.json();
         if (plansData.paddleEnabled && plansData.clientToken) {
+          window.PADDLE_ENV = plansData.paddleEnv || 'production';
           loadPaddleJS(plansData.clientToken);
         }
       }
