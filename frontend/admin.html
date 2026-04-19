@@ -143,7 +143,7 @@
       </div>
       <div class="section-card" style="padding:0;overflow:auto">
         <table class="admin-table" id="usersTable">
-          <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Bugün</th><th>Durum</th><th>Kayıt</th><th>İşlem</th></tr></thead>
+          <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Bugün</th><th>Durum</th><th>Kayıt</th><th>İşlemler</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -290,7 +290,10 @@ async function loadUsers(page) {
         <td style="font-family:'Geist Mono',monospace">${u.todayUsage}</td>
         <td><span style="color:${u.is_active?'var(--bullish)':'var(--bearish)'}">${u.is_active?'Aktif':'Pasif'}</span></td>
         <td>${fmtDate(u.created_at)}</td>
-        <td><button class="btn-xs ${u.is_active?'danger':'success'}" onclick="toggleUser('${u.id}', ${u.is_active})">${u.is_active?'Kapat':'Aç'}</button></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn-xs ${u.is_active?'danger':'success'}" onclick="toggleUser('${u.id}', ${u.is_active})">${u.is_active?'Kapat':'Aç'}</button>
+          <button class="btn-xs danger" onclick="deleteUser('${u.id}', '${u.username}')">Sil</button>
+        </td>
       </tr>`
     ).join('');
 
@@ -312,6 +315,14 @@ async function changeRole(userId, role) {
 async function toggleUser(userId, currentState) {
   const r = await window.apiFetch('/api/admin/users/'+userId+'/toggle', { method:'PUT' });
   if (r.ok) { loadUsers(currentPage); window.toast(currentState ? 'Kullanıcı pasif edildi.' : 'Kullanıcı aktif edildi.', 'info'); }
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`"${username}" kullanıcısını ve tüm verilerini silmek istediğine emin misin? Bu işlem geri alınamaz.`)) return;
+  const r = await window.apiFetch('/api/admin/users/'+userId, { method:'DELETE' });
+  const d = await r.json();
+  if (r.ok) { window.toast(d.message, 'success'); loadUsers(currentPage); }
+  else window.toast(d.error || 'Silme başarısız.', 'error');
 }
 
 function debounceSearch() {

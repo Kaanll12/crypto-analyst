@@ -22,9 +22,11 @@ const pricesRoutes   = require('./routes/prices');
 const adminRoutes    = require('./routes/admin');
 
 // Yeni rotalar — hata olursa server ayakta kalsın
-let notifyRoutes, emailRoutes;
-try { notifyRoutes = require('./routes/notifications'); } catch(e) { console.error('⚠️  notifications route yüklenemedi:', e.message); }
-try { emailRoutes  = require('./routes/email');         } catch(e) { console.error('⚠️  email route yüklenemedi:', e.message); }
+let notifyRoutes, emailRoutes, telegramRoutes, oauthRoutes;
+try { notifyRoutes  = require('./routes/notifications'); } catch(e) { console.error('⚠️  notifications route yüklenemedi:', e.message); }
+try { emailRoutes   = require('./routes/email');         } catch(e) { console.error('⚠️  email route yüklenemedi:', e.message); }
+try { telegramRoutes = require('./routes/telegram');     } catch(e) { console.error('⚠️  telegram route yüklenemedi:', e.message); }
+try { oauthRoutes   = require('./routes/oauth');         } catch(e) { console.error('⚠️  oauth route yüklenemedi:', e.message); }
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -54,8 +56,10 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/alerts',        alertRoutes);
 app.use('/api/prices',        pricesRoutes);
 app.use('/api/admin',         adminRoutes);
-if (notifyRoutes) app.use('/api/notifications', notifyRoutes);
-if (emailRoutes)  app.use('/api/email',         emailRoutes);
+if (notifyRoutes)   app.use('/api/notifications', notifyRoutes);
+if (emailRoutes)    app.use('/api/email',         emailRoutes);
+if (telegramRoutes) app.use('/api/telegram',      telegramRoutes);
+if (oauthRoutes)    app.use('/api/oauth',          oauthRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

@@ -143,6 +143,32 @@ router.post('/upgrade-vip', authenticate, (req, res) => {
   }
 });
 
+// ─── KULLANICI ADI DEĞİŞTİR ──────────────────────────────────────────────
+router.put('/change-username',
+  authenticate,
+  [
+    body('username')
+      .isLength({ min: 3, max: 30 }).withMessage('Kullanıcı adı 3-30 karakter arası olmalı.')
+      .matches(/^[a-zA-Z0-9_]+$/).withMessage('Kullanıcı adı sadece harf, rakam ve _ içerebilir.'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
+
+    const { username } = req.body;
+    try {
+      const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
+      if (existing) return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanımda.' });
+
+      db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, req.user.id);
+      res.json({ message: 'Kullanıcı adı güncellendi.', username });
+    } catch (err) {
+      console.error('Change-username error:', err);
+      res.status(500).json({ error: 'Sunucu hatası.' });
+    }
+  }
+);
+
 // ─── ŞİFRE DEĞİŞTİR ──────────────────────────────────────────────────────
 router.put('/change-password',
   authenticate,

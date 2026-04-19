@@ -4,9 +4,11 @@
 const COIN_COLORS = window.COIN_COLORS || {
   BTC: '#F7931A', ETH: '#627EEA', SOL: '#9945FF',
   XRP: '#00AAE4', ADA: '#0033AD', BNB: '#F0B90B',
+  DOGE: '#C2A633', AVAX: '#E84142', DOT: '#E6007A',
 };
 const COIN_AVATARS = window.COIN_AVATARS || {
   BTC: '₿', ETH: 'Ξ', SOL: '◎', XRP: '✕', ADA: '₳', BNB: '⬡',
+  DOGE: 'Ð', AVAX: '△', DOT: '●',
 };
 
 // ─── CoinGecko fiyat verisini çek ────────────────────────────────────────

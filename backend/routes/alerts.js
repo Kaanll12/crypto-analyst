@@ -104,6 +104,13 @@ async function checkAlerts() {
     sendPushToUser = notifyMod.sendPushToUser;
   } catch(_) {}
 
+  // Telegram modülünü lazy-load et
+  let sendTelegramMessage = null;
+  try {
+    const telegramMod = require('./telegram');
+    sendTelegramMessage = telegramMod.sendTelegramMessage;
+  } catch(_) {}
+
   // Her alarm için kontrol et
   for (const alert of activeAlerts) {
     const price = prices[alert.coin_id];
@@ -134,6 +141,25 @@ async function checkAlerts() {
           });
         } catch(pushErr) {
           console.warn('Push bildirimi gönderilemedi:', pushErr.message);
+        }
+      }
+
+      // Telegram bildirimi gönder
+      if (sendTelegramMessage) {
+        try {
+          const userRow = db.prepare('SELECT telegram_chat_id FROM users WHERE id = ?').get(alert.user_id);
+          if (userRow?.telegram_chat_id) {
+            const dirEmoji = alert.condition === 'above' ? '⬆️' : '⬇️';
+            await sendTelegramMessage(userRow.telegram_chat_id,
+              `🔔 <b>Fiyat Alarmı Tetiklendi!</b>\n\n` +
+              `${dirEmoji} <b>${alert.coin_sym}</b>\n` +
+              `Güncel Fiyat: <b>$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}</b>\n` +
+              `Hedef Fiyat: <b>$${alert.target_price.toLocaleString('en-US', { maximumFractionDigits: 2 })}</b>\n\n` +
+              `<a href="https://crypto-analyst.app">📊 Analiz Yap →</a>`
+            );
+          }
+        } catch(tgErr) {
+          console.warn('Telegram bildirimi gönderilemedi:', tgErr.message);
         }
       }
     }

@@ -5,7 +5,7 @@
 const express = require('express');
 const router  = express.Router();
 
-const COINS = ['bitcoin','ethereum','solana','binancecoin','ripple','cardano'];
+const COINS = ['bitcoin','ethereum','solana','binancecoin','ripple','cardano','dogecoin','avalanche-2','polkadot'];
 
 // ─── IN-MEMORY CACHE (60 saniye) ─────────────────────────────────────────────
 let cache = { data: null, ts: 0 };

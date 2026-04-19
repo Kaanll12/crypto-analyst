@@ -147,6 +147,12 @@ function initDatabase() {
   // Şifre sıfırlama için
   try { db.exec(`ALTER TABLE users ADD COLUMN reset_token TEXT`); } catch(_) {}
   try { db.exec(`ALTER TABLE users ADD COLUMN reset_token_expires TEXT`); } catch(_) {}
+  // Google OAuth için
+  try { db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT`); } catch(_) {}
+  // Telegram entegrasyonu için
+  try { db.exec(`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`); } catch(_) {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN telegram_code TEXT`); } catch(_) {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN telegram_code_expires TEXT`); } catch(_) {}
   // Push bildirim geçmişi
   try { db.exec(`
     CREATE TABLE IF NOT EXISTS notification_history (

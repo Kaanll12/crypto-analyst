@@ -2,12 +2,15 @@
 'use strict';
 
 const COINS = [
-  { id:'bitcoin',      sym:'BTC', name:'Bitcoin',  avatar:'₿',  avatarColor:'#F7931A' },
-  { id:'ethereum',     sym:'ETH', name:'Ethereum', avatar:'Ξ',  avatarColor:'#627EEA' },
-  { id:'solana',       sym:'SOL', name:'Solana',   avatar:'◎',  avatarColor:'#9945FF' },
-  { id:'binancecoin',  sym:'BNB', name:'BNB',      avatar:'⬡',  avatarColor:'#F3BA2F' },
-  { id:'ripple',       sym:'XRP', name:'XRP',      avatar:'✕',  avatarColor:'#00AAE4' },
-  { id:'cardano',      sym:'ADA', name:'Cardano',  avatar:'₳',  avatarColor:'#0D1E7E' },
+  { id:'bitcoin',      sym:'BTC',  name:'Bitcoin',   avatar:'₿',  avatarColor:'#F7931A' },
+  { id:'ethereum',     sym:'ETH',  name:'Ethereum',  avatar:'Ξ',  avatarColor:'#627EEA' },
+  { id:'solana',       sym:'SOL',  name:'Solana',    avatar:'◎',  avatarColor:'#9945FF' },
+  { id:'binancecoin',  sym:'BNB',  name:'BNB',       avatar:'⬡',  avatarColor:'#F3BA2F' },
+  { id:'ripple',       sym:'XRP',  name:'XRP',       avatar:'✕',  avatarColor:'#00AAE4' },
+  { id:'cardano',      sym:'ADA',  name:'Cardano',   avatar:'₳',  avatarColor:'#0D1E7E' },
+  { id:'dogecoin',     sym:'DOGE', name:'Dogecoin',  avatar:'Ð',  avatarColor:'#C2A633' },
+  { id:'avalanche-2',  sym:'AVAX', name:'Avalanche', avatar:'△',  avatarColor:'#E84142' },
+  { id:'polkadot',     sym:'DOT',  name:'Polkadot',  avatar:'●',  avatarColor:'#E6007A' },
 ];
 
 let selected  = COINS[0];
@@ -24,7 +27,22 @@ window.addEventListener('scroll', () => {
 
 // ─── MOBILE MENU ───────────────────────────────────────────────────────────
 function toggleMenu() {
-  document.getElementById('navLinks').classList.toggle('open');
+  const nav  = document.getElementById('navLinks');
+  const btn  = document.getElementById('hamburger');
+  const open = nav.classList.toggle('open');
+  if (btn) btn.classList.toggle('open', open);
+  // Menü dışına tıklayınca kapat (bir kerelik listener)
+  if (open) {
+    setTimeout(() => {
+      document.addEventListener('click', function handler(e) {
+        if (!nav.contains(e.target) && !btn.contains(e.target)) {
+          nav.classList.remove('open');
+          btn && btn.classList.remove('open');
+          document.removeEventListener('click', handler);
+        }
+      });
+    }, 10);
+  }
 }
 
 // ─── CLOCK ─────────────────────────────────────────────────────────────────

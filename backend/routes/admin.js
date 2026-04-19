@@ -105,6 +105,21 @@ router.put('/users/:id/toggle', authenticate, requireAdmin, (req, res) => {
   } catch (err) { res.status(500).json({ error: 'İşlem başarısız.' }); }
 });
 
+// Kullanıcı sil
+router.delete('/users/:id', authenticate, requireAdmin, (req, res) => {
+  try {
+    if (req.params.id === req.user.id) return res.status(400).json({ error: 'Kendi hesabını silemezsin.' });
+    const user = db.prepare('SELECT id, username FROM users WHERE id=?').get(req.params.id);
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    db.prepare('DELETE FROM analyses WHERE user_id=?').run(req.params.id);
+    db.prepare('DELETE FROM price_alerts WHERE user_id=?').run(req.params.id);
+    db.prepare('DELETE FROM user_daily_usage WHERE user_id=?').run(req.params.id);
+    db.prepare('DELETE FROM users WHERE id=?').run(req.params.id);
+    console.log(`[admin] Kullanıcı silindi: ${user.username} (${req.params.id})`);
+    res.json({ message: `${user.username} silindi.` });
+  } catch (err) { res.status(500).json({ error: 'Silme başarısız.' }); }
+});
+
 // Raporlar listesi
 router.get('/reports', authenticate, requireAdmin, (_req, res) => {
   try {

@@ -19,6 +19,9 @@ function renderProfile(user, usage) {
   document.getElementById('profileAvatar').textContent    = initials;
   document.getElementById('profileUsername').textContent  = user.username;
   document.getElementById('profileEmail').textContent     = user.email;
+  // Kullanıcı adı alanını doldur
+  const curUsernameEl = document.getElementById('currentUsername');
+  if (curUsernameEl) curUsernameEl.value = user.username || '';
 
   // Üyelik tarihi
   const joined = user.created_at
@@ -104,6 +107,51 @@ window.changePassword = async function() {
   }
 };
 
+// ─── KULLANICI ADI DEĞİŞTİR ───────────────────────────────────────────────
+window.changeUsername = async function() {
+  const newUsername = (document.getElementById('newUsername')?.value || '').trim();
+  if (!newUsername) {
+    toast('Yeni kullanıcı adını girin.', 'error'); return;
+  }
+  if (newUsername.length < 3 || newUsername.length > 30) {
+    toast('Kullanıcı adı 3-30 karakter arası olmalı.', 'error'); return;
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+    toast('Sadece harf, rakam ve _ kullanabilirsin.', 'error'); return;
+  }
+
+  const btn = document.getElementById('changeUsernameBtn');
+  btn.disabled = true; btn.textContent = 'Güncelleniyor…';
+
+  try {
+    const res = await window.apiFetch('/api/auth/change-username', {
+      method: 'PUT',
+      body: JSON.stringify({ username: newUsername }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || 'Hata oluştu.', 'error'); return;
+    }
+    toast('Kullanıcı adı güncellendi! ✅', 'success');
+    document.getElementById('newUsername').value = '';
+    // Profili yenile
+    await loadProfile();
+    // Local auth verisini güncelle
+    const stored = localStorage.getItem('cryptoanalyst_user');
+    if (stored) {
+      try {
+        const u = JSON.parse(stored);
+        u.username = newUsername;
+        localStorage.setItem('cryptoanalyst_user', JSON.stringify(u));
+      } catch(_) {}
+    }
+  } catch {
+    toast('Bağlantı hatası.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Kullanıcı Adını Güncelle';
+  }
+};
+
 // ─── VIP YÜKSELTME ────────────────────────────────────────────────────────
 window.upgradeVip = async function() {
   try {
@@ -118,6 +166,98 @@ window.upgradeVip = async function() {
   }
 };
 
+// ─── TELEGRAM ─────────────────────────────────────────────────────────────
+async function loadTelegramStatus() {
+  try {
+    const res = await window.apiFetch('/api/telegram/status');
+    if (!res.ok) {
+      document.getElementById('telegramCard').style.display = 'none';
+      return;
+    }
+    const data = await res.json();
+    if (!data.enabled) {
+      document.getElementById('telegramCard').style.display = 'none';
+      return;
+    }
+    document.getElementById('telegramConnected').style.display    = data.connected ? '' : 'none';
+    document.getElementById('telegramDisconnected').style.display = data.connected ? 'none' : '';
+  } catch (_) {}
+}
+
+window.connectTelegram = async function() {
+  const btn = document.getElementById('telegramConnectBtn');
+  btn.disabled = true; btn.textContent = 'Kod oluşturuluyor…';
+  try {
+    const res = await window.apiFetch('/api/telegram/generate-code', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Hata.', 'error'); return; }
+
+    document.getElementById('telegramCodeWrap').style.display = '';
+    document.getElementById('telegramCode').textContent = `/start ${data.code}`;
+    document.getElementById('telegramStartCmd').textContent = `/start ${data.code}`;
+    const botLink = document.getElementById('telegramBotLink');
+    botLink.href = data.deepLink;
+    botLink.textContent = `@${data.botUsername}`;
+
+    // 15 dk geri sayım
+    let remaining = data.expiresIn * 60;
+    const interval = setInterval(() => {
+      remaining--;
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const el = document.getElementById('telegramExpiry');
+      if (el) el.textContent = `Kod geçerlilik süresi: ${m}:${s.toString().padStart(2,'0')}`;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        document.getElementById('telegramCodeWrap').style.display = 'none';
+        btn.disabled = false; btn.textContent = 'Telegram\'ı Bağla';
+        toast('Kod süresi doldu. Yeni kod oluştur.', 'error');
+      }
+    }, 1000);
+
+    // Bağlantıyı periyodik kontrol et
+    const checkInterval = setInterval(async () => {
+      try {
+        const statusRes = await window.apiFetch('/api/telegram/status');
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          if (s.connected) {
+            clearInterval(checkInterval);
+            clearInterval(interval);
+            document.getElementById('telegramCodeWrap').style.display = 'none';
+            document.getElementById('telegramConnected').style.display = '';
+            document.getElementById('telegramDisconnected').style.display = 'none';
+            toast('🎉 Telegram başarıyla bağlandı!', 'success');
+            btn.disabled = false; btn.textContent = 'Telegram\'ı Bağla';
+          }
+        }
+      } catch (_) {}
+    }, 5000);
+
+  } catch (_) {
+    toast('Bağlantı hatası.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Telegram\'ı Bağla';
+  }
+};
+
+window.disconnectTelegram = async function() {
+  if (!confirm('Telegram bağlantısını kesmek istediğine emin misin?')) return;
+  try {
+    const res = await window.apiFetch('/api/telegram/disconnect', { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok) {
+      toast('Telegram bağlantısı kesildi.', 'info');
+      document.getElementById('telegramConnected').style.display = 'none';
+      document.getElementById('telegramDisconnected').style.display = '';
+    } else {
+      toast(data.error || 'Hata.', 'error');
+    }
+  } catch (_) {
+    toast('Bağlantı hatası.', 'error');
+  }
+};
+
 // ─── AUTH HOOKS ───────────────────────────────────────────────────────────
 window.onUserLogin = function(user) {
   document.getElementById('loginGate').style.display    = 'none';
@@ -126,6 +266,7 @@ window.onUserLogin = function(user) {
   document.getElementById('userArea').style.display     = 'flex';
   document.getElementById('userBadge').textContent      = user.username;
   loadProfile();
+  loadTelegramStatus();
 };
 
 window.onUserLogout = function() {

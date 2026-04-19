@@ -148,6 +148,65 @@ window.logout = function() {
   if (window.onUserLogout) window.onUserLogout();
 };
 
+// ─── GOOGLE OAUTH BUTONU GÖRÜNÜRLÜĞÜNü KONTROL ET ──────────────────────────
+(async function checkGoogleOAuth() {
+  try {
+    const res = await fetch((window.API_BASE || '') + '/api/oauth/google/status');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.enabled) {
+        const loginWrap    = document.getElementById('googleLoginWrap');
+        const registerWrap = document.getElementById('googleRegisterWrap');
+        if (loginWrap)    loginWrap.style.display    = '';
+        if (registerWrap) registerWrap.style.display = '';
+      }
+    }
+  } catch (_) {}
+})();
+
+// ─── GOOGLE OAUTH CALLBACK TOKEN İŞLEME ─────────────────────────────────────
+(function handleOAuthCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const oauthToken = params.get('oauth_token');
+  const oauthError = params.get('error');
+
+  if (oauthError) {
+    // Hata varsa URL'yi temizle ve toast göster
+    window.history.replaceState({}, '', '/');
+    // Toast'u biraz bekle (utils.js yüklensin)
+    setTimeout(() => toast(decodeURIComponent(oauthError), 'error'), 500);
+    return;
+  }
+
+  if (!oauthToken) return;
+
+  // Token'ı URL'den al, localStorage'a kaydet
+  window.history.replaceState({}, '', '/');
+
+  (async function() {
+    try {
+      saveSession(oauthToken, { username: params.get('oauth_user') || 'Kullanıcı' });
+
+      // Token geçerliliğini doğrula ve tam kullanıcı bilgisini al
+      const res = await fetch((window.API_BASE || '') + '/api/auth/me', {
+        headers: { Authorization: `Bearer ${oauthToken}` },
+      });
+
+      if (!res.ok) { clearSession(); return; }
+
+      const data = await res.json();
+      saveSession(oauthToken, data.user);
+      window.currentUser = data.user;
+
+      setTimeout(() => {
+        toast(`🎉 Google ile giriş başarılı! Hoş geldiniz, ${data.user.username}!`, 'success');
+        if (window.onUserLogin) window.onUserLogin(data.user, data.usage);
+      }, 300);
+
+    } catch (_) { clearSession(); }
+  })();
+})();
+
 // ─── AUTO LOGIN (from stored token) ─────────────────────────────────────────
 (async function autoLogin() {
   const token = getToken();

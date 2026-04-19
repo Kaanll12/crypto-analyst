@@ -38,7 +38,8 @@
     .role-user  { background: rgba(255,255,255,.06); color: var(--fg-muted); border: 1px solid var(--border); }
 
     .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 600px) { .profile-grid { grid-template-columns: 1fr; } }
+    .profile-grid .pcard:first-child { grid-column: 1 / -1; }
+    @media (max-width: 600px) { .profile-grid { grid-template-columns: 1fr; } .profile-grid .pcard:first-child { grid-column: auto; } }
 
     .pcard {
       background: var(--bg-card); border: 1px solid var(--border);
@@ -179,6 +180,21 @@
         </div>
       </div>
 
+      <!-- Kullanıcı Adı Değiştir -->
+      <div class="pcard">
+        <h2>✏️ Kullanıcı Adı</h2>
+        <div class="form-group">
+          <label class="form-label">Mevcut Kullanıcı Adı</label>
+          <input class="form-input" type="text" id="currentUsername" placeholder="—" readonly style="opacity:.6;cursor:default"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Yeni Kullanıcı Adı</label>
+          <input class="form-input" type="text" id="newUsername" placeholder="kullanici_adi" autocomplete="username" maxlength="30"/>
+          <div class="pass-hint">3-30 karakter, harf/rakam/_ kullanabilirsin</div>
+        </div>
+        <button class="btn-primary" onclick="changeUsername()" id="changeUsernameBtn">Kullanıcı Adını Güncelle</button>
+      </div>
+
       <!-- Şifre Değiştir -->
       <div class="pcard">
         <h2>🔒 Şifre Değiştir</h2>
@@ -198,6 +214,33 @@
         <button class="btn-primary" onclick="changePassword()" id="changePwdBtn">Şifreyi Güncelle</button>
       </div>
 
+    </div>
+
+    <!-- Telegram Bağla -->
+    <div class="pcard" id="telegramCard" style="margin-top:20px">
+      <h2>📱 Telegram Bildirimleri</h2>
+      <p style="font-size:14px;color:var(--fg-muted);margin-bottom:16px">
+        Telegram hesabını bağlayarak fiyat alarmlarını ve bildirimleri doğrudan mesaj olarak al.
+      </p>
+      <div id="telegramConnected" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bullish-dim);border:1px solid var(--bullish-border);border-radius:8px;margin-bottom:12px;font-size:13px;color:var(--bullish)">
+          ✅ Telegram hesabın bağlı
+        </div>
+        <button class="btn-primary" style="background:var(--bearish);max-width:200px" onclick="disconnectTelegram()">Bağlantıyı Kes</button>
+      </div>
+      <div id="telegramDisconnected">
+        <button class="btn-primary" style="max-width:220px" onclick="connectTelegram()" id="telegramConnectBtn">Telegram'ı Bağla</button>
+        <div id="telegramCodeWrap" style="display:none;margin-top:16px;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px">
+          <div style="font-size:12px;color:var(--fg-muted);margin-bottom:8px">Telegram bot'una şu mesajı gönder:</div>
+          <div style="font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:2px;color:var(--accent);margin-bottom:10px" id="telegramCode">—</div>
+          <div style="font-size:12px;color:var(--fg-muted);margin-bottom:10px">
+            1. Telegram'da <a id="telegramBotLink" href="#" target="_blank" style="color:var(--accent)">@bota tıkla</a><br>
+            2. <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px" id="telegramStartCmd">/start KOD</code> komutunu gönder<br>
+            3. Bot sana onay mesajı gönderecek
+          </div>
+          <div style="font-size:11px;color:var(--fg-subtle)" id="telegramExpiry">Kod 15 dakika geçerli.</div>
+        </div>
+      </div>
     </div>
 
     <!-- VIP Yükseltme (normal kullanıcılar için) -->
