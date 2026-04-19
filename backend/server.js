@@ -91,9 +91,9 @@ app.get('/api/health', (_req, res) => {
 });
 
 // ─── FRONTEND (her ortamda static serve) ──────────────────────────────────
+const frontendPath = process.env.FRONTEND_PATH
+  || path.join(__dirname, '..', 'frontend');
 {
-  const frontendPath = process.env.FRONTEND_PATH
-    || path.join(__dirname, '..', 'frontend');
 
   // sw.js: tarayıcı her zaman güncel versiyonu almalı — HTTP cache'i devre dışı bırak
   app.get('/sw.js', (_req, res) => {
