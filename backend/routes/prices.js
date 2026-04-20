@@ -83,29 +83,6 @@ router.get('/', pricesLimiter, async (_req, res) => {
   }
 });
 
-// ─── GET /api/prices/:coinId ──────────────────────────────────────────────────
-router.get('/:coinId', pricesLimiter, async (req, res) => {
-  const coinId = req.params.coinId.toLowerCase();
-  if (!COINS.includes(coinId)) {
-    return res.status(404).json({ error: 'Desteklenmeyen coin.' });
-  }
-
-  try {
-    const now = Date.now();
-    if (!cache.data || (now - cache.ts) >= CACHE_TTL) {
-      const raw = await fetchFromCoinGecko();
-      const prices = {};
-      raw.forEach(c => { prices[c.id] = c; });
-      cache = { data: prices, raw, ts: Date.now() };
-    }
-    const coin = cache.data[coinId];
-    if (!coin) return res.status(404).json({ error: 'Coin bulunamadı.' });
-    res.json({ data: coin });
-  } catch (err) {
-    res.status(503).json({ error: 'Fiyat alınamadı.' });
-  }
-});
-
 // ─── GET /api/prices/history/:coinId/:days ────────────────────────────────────
 // CoinGecko market_chart proxy — 5 dakika cache
 const historyCache = {};
@@ -182,6 +159,30 @@ router.get('/rates', async (_req, res) => {
     // Cache varsa stale dön
     if (ratesCache.data) return res.json({ data: ratesCache.data, cached: true, stale: true });
     res.json({ data: { TRY: 38.5, EUR: 0.92 }, cached: false, fallback: true });
+  }
+});
+
+// ─── GET /api/prices/:coinId ──────────────────────────────────────────────────
+// NOT: Bu route en sonda olmalı — /history ve /rates gibi spesifik path'leri ezmemek için
+router.get('/:coinId', pricesLimiter, async (req, res) => {
+  const coinId = req.params.coinId.toLowerCase();
+  if (!COINS.includes(coinId)) {
+    return res.status(404).json({ error: 'Desteklenmeyen coin.' });
+  }
+
+  try {
+    const now = Date.now();
+    if (!cache.data || (now - cache.ts) >= CACHE_TTL) {
+      const raw = await fetchFromCoinGecko();
+      const prices = {};
+      raw.forEach(c => { prices[c.id] = c; });
+      cache = { data: prices, raw, ts: Date.now() };
+    }
+    const coin = cache.data[coinId];
+    if (!coin) return res.status(404).json({ error: 'Coin bulunamadı.' });
+    res.json({ data: coin });
+  } catch (err) {
+    res.status(503).json({ error: 'Fiyat alınamadı.' });
   }
 });
 
