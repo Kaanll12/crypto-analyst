@@ -582,6 +582,76 @@ async function upgradeToVip() {
   }
 }
 
+// ─── MARKET SUMMARY + FEAR & GREED ──────────────────────────────────────────
+async function loadMarketSummary() {
+  try {
+    // CoinGecko global endpoint — CORS'u aşmak için backend'den çek
+    const r = await fetch('https://api.coingecko.com/api/v3/global');
+    if (!r.ok) throw new Error();
+    const json = await r.json();
+    const d = json.data;
+
+    const fmt = v => v >= 1e12
+      ? '$' + (v / 1e12).toFixed(2) + 'T'
+      : '$' + (v / 1e9).toFixed(1) + 'B';
+
+    const rows = [
+      { label: 'Toplam Piyasa Değeri', val: fmt(d.total_market_cap.usd) },
+      { label: '24s Hacim',            val: fmt(d.total_volume.usd) },
+      { label: 'BTC Dominansı',        val: d.market_cap_percentage.btc.toFixed(1) + '%' },
+      { label: 'ETH Dominansı',        val: d.market_cap_percentage.eth.toFixed(1) + '%' },
+      { label: 'Aktif Coin Sayısı',    val: d.active_cryptocurrencies.toLocaleString('tr-TR') },
+    ];
+
+    const el = document.getElementById('marketSummaryBody');
+    if (el) el.innerHTML = rows.map(r =>
+      `<div class="market-stat-row">
+        <span class="market-stat-label">${r.label}</span>
+        <span class="market-stat-val">${r.val}</span>
+      </div>`
+    ).join('');
+  } catch(_) {
+    const el = document.getElementById('marketSummaryBody');
+    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--fg-subtle);padding:4px 0">Piyasa verisi alınamadı.</div>';
+  }
+}
+
+async function loadFearGreed() {
+  try {
+    const r = await fetch('https://api.alternative.me/fng/');
+    if (!r.ok) throw new Error();
+    const json = await r.json();
+    const item = json.data?.[0];
+    if (!item) throw new Error();
+
+    const score = parseInt(item.value);
+    const classMap = {
+      'Extreme Fear':  { cls: 'extreme-fear',  tr: 'Aşırı Korku' },
+      'Fear':          { cls: 'fear',           tr: 'Korku' },
+      'Neutral':       { cls: 'neutral',        tr: 'Nötr' },
+      'Greed':         { cls: 'greed',          tr: 'Açgözlülük' },
+      'Extreme Greed': { cls: 'extreme-greed',  tr: 'Aşırı Açgözlülük' },
+    };
+    const info = classMap[item.value_classification] || { cls: 'neutral', tr: item.value_classification };
+
+    const scoreEl = document.getElementById('fgScore');
+    const classEl = document.getElementById('fgClass');
+    const barEl   = document.getElementById('fgBar');
+    const dateEl  = document.getElementById('fgDate');
+
+    if (scoreEl) scoreEl.textContent = score;
+    if (classEl) { classEl.textContent = info.tr; classEl.className = 'fg-classification ' + info.cls; }
+    if (barEl)   barEl.style.width = score + '%';
+    if (dateEl) {
+      const ts = new Date(parseInt(item.timestamp) * 1000);
+      dateEl.textContent = ts.toLocaleDateString('tr-TR');
+    }
+  } catch(_) {
+    const el = document.getElementById('fearGreedWidget');
+    if (el) el.style.display = 'none';
+  }
+}
+
 // ─── GEN BUTTON STATE ────────────────────────────────────────────────────────
 function updateGenButton(loggedIn) {
   const btn = document.getElementById('genBtn');
@@ -806,6 +876,10 @@ window.onUserLogout = function() {
 
   await Promise.all([fetchPrices(), loadStats(), loadReport()]);
   loadPriceChart(7);
+  loadMarketSummary();
+  loadFearGreed();
   setInterval(fetchPrices, 60000);
   setInterval(loadStats, 120000);
+  setInterval(loadMarketSummary, 5 * 60 * 1000); // 5 dakikada bir
+  setInterval(loadFearGreed, 60 * 60 * 1000);    // 1 saatte bir
 })();
