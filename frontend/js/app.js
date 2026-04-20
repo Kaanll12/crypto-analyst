@@ -283,6 +283,11 @@ window.loadPriceChart = async function(days) {
     if (canvas) canvas.style.opacity = '1';
   } catch(e) {
     console.warn('Grafik verisi alınamadı:', e.message);
+    const wrap = document.getElementById('priceChartCanvas')?.parentElement;
+    if (wrap) wrap.innerHTML =
+      `<div style="display:flex;align-items:center;justify-content:center;height:180px;color:var(--fg-subtle);font-size:12px">
+        Grafik verisi alınamadı — CoinGecko rate limit. Kısa süre bekleyip tekrar deneyin.
+      </div>`;
   } finally {
     if (loading) loading.classList.remove('visible');
   }

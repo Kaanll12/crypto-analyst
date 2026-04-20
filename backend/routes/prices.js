@@ -86,7 +86,7 @@ router.get('/', pricesLimiter, async (_req, res) => {
 // ─── GET /api/prices/history/:coinId/:days ────────────────────────────────────
 // CoinGecko market_chart proxy — 5 dakika cache
 const historyCache = {};
-const HISTORY_TTL  = 5 * 60 * 1000;
+const HISTORY_TTL  = 15 * 60 * 1000; // 15 dakika — CoinGecko rate limit koruması
 
 router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   const coinId = req.params.coinId.toLowerCase();
@@ -107,8 +107,11 @@ router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   }
 
   try {
+    // CoinGecko free tier: interval'ı otomatik belirlesin (daily/weekly)
+    // 'weekly' parametresi free tier'da hata veriyor
+    const intervalParam = days <= 1 ? '&interval=hourly' : '';
     const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
-                `?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : days <= 30 ? 'daily' : 'weekly'}`;
+                `?vs_currency=usd&days=${days}${intervalParam}`;
     const r = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(10000),
