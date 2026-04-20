@@ -42,7 +42,7 @@ app.use(corsMiddleware);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 app.use(sanitizeInput);
-app.use(generalLimiter);
+app.use('/api/', generalLimiter);   // Sadece API rotalarına uygula — statik dosyalar etkilenmesin
 app.use(morgan('combined'));
 app.use(apiLogger(db));
 
