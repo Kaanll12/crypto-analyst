@@ -217,6 +217,40 @@ function resetAnalysisPanel() {
   document.getElementById('explanationCard').style.display = 'none';
 }
 
+function showAnalysisSkeleton() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('panelHeader').style.display = 'flex';
+  document.getElementById('metricCardsGrid').style.display = 'grid';
+  document.getElementById('explanationCard').style.display = '';
+
+  // Header skeleton
+  document.getElementById('panelCoinName').innerHTML =
+    `<div class="skeleton skeleton-text" style="width:140px;height:18px;margin:0"></div>`;
+  document.getElementById('panelTimestamp').innerHTML =
+    `<div class="skeleton skeleton-text" style="width:100px;height:12px;margin:0"></div>`;
+
+  // Metric cards skeleton
+  ['signalCard','confidenceCard','riskCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML =
+      `<div class="skeleton skeleton-text" style="width:60%;height:12px;margin:0 0 8px"></div>
+       <div class="skeleton" style="width:80px;height:28px;margin:0"></div>`;
+  });
+
+  // Key factors skeleton
+  const kfList = document.getElementById('kfList');
+  if (kfList) kfList.innerHTML = [80,65,90,55].map(w =>
+    `<li><div class="skeleton skeleton-text" style="width:${w}%;height:12px;margin:0"></div></li>`
+  ).join('');
+
+  // Content skeleton
+  const analysisContent = document.getElementById('analysisContent');
+  if (analysisContent) analysisContent.innerHTML =
+    [100,85,92,70,88,95,75,82].map(w =>
+      `<div class="skeleton skeleton-text" style="width:${w}%"></div>`
+    ).join('');
+}
+
 // ─── RENDER ANALYSIS PANEL (AI_ResultPanel design) ──────────────────────────
 function renderAnalysisPanel(data) {
   currentAnalysis = data;
@@ -321,6 +355,8 @@ async function generateAnalysis() {
   btn.classList.add('loading');
   btnText.textContent = 'Analiz Yapılıyor…';
   if (refreshIcon) refreshIcon.classList.add('spin');
+  showAnalysisSkeleton();
+  document.getElementById('analizler').scrollIntoView({ behavior: 'smooth' });
 
   const d = prices[selected.id] || {};
 
@@ -655,12 +691,12 @@ window.onUserLogout = function() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 (async function init() {
-  // Coin tabs placeholder
-  document.getElementById('coinTabs').innerHTML = COINS.map(c =>
-    `<button class="coin-tab ${c.id === selected.id ? 'active' : ''}" onclick="selectCoin('${c.id}')">
-      <span class="coin-tab-sym">${c.sym}</span>
-      <span class="coin-tab-ch">—</span>
-    </button>`
+  // Coin tabs skeleton placeholder
+  document.getElementById('coinTabs').innerHTML = COINS.map(() =>
+    `<div class="coin-tab" style="pointer-events:none;gap:6px">
+      <div class="skeleton skeleton-text" style="width:36px;height:12px;margin:0"></div>
+      <div class="skeleton skeleton-text" style="width:48px;height:10px;margin:0"></div>
+    </div>`
   ).join('');
 
   await Promise.all([fetchPrices(), loadStats(), loadReport()]);
