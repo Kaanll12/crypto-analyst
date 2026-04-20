@@ -6,8 +6,9 @@ var COIN_AVATARS = window.COIN_AVATARS;
 var COIN_COLORS  = window.COIN_COLORS;
 
 let portfolioData = null;
-let pieChartInstance = null;
-let barChartInstance = null;
+let pieChartInstance  = null;
+let barChartInstance  = null;
+let perfChartInstance = null;
 let TRY_RATE = 38.5; // başlangıç değeri — API'den güncellenecek
 
 // Dinamik kur çek
@@ -42,6 +43,7 @@ async function loadPortfolio() {
     renderPnlSummary(portfolioData);
     renderCharts(portfolioData.coins || []);
     await loadPositions();
+    await loadPerformanceChart();
   } catch {
     document.getElementById('coinCards').innerHTML =
       '<div class="pf-empty">Portföy yüklenemedi.</div>';
@@ -217,6 +219,108 @@ function renderPnlSummary(d) {
 function setEl(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
+}
+
+// ─── PERFORMANS GRAFİĞİ (çizgi) ──────────────────────────────────────────
+async function loadPerformanceChart() {
+  const card = document.getElementById('perfChartCard');
+  if (!card) return;
+
+  try {
+    const res = await window.apiFetch('/api/portfolio/performance');
+    if (!res.ok) throw new Error();
+    const { labels, values, invested } = await res.json();
+
+    if (!labels.length) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    // Kısa tarih etiketi: "15 Nis"
+    const fmtLabel = d => {
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    };
+
+    const ctx = document.getElementById('perfChart');
+    if (!ctx) return;
+    if (perfChartInstance) { perfChartInstance.destroy(); perfChartInstance = null; }
+
+    // Gradient fill
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(99,102,241,.35)');
+    gradient.addColorStop(1, 'rgba(99,102,241,.0)');
+
+    perfChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(fmtLabel),
+        datasets: [
+          {
+            label: 'Portföy Değeri',
+            data: values,
+            borderColor: '#6366f1',
+            backgroundColor: gradient,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#6366f1',
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: 'Yatırım',
+            data: invested,
+            borderColor: '#f59e0b',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHoverBackgroundColor: '#f59e0b',
+            tension: 0.1,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15,15,25,.92)',
+            borderColor: 'rgba(255,255,255,.1)',
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: '#6b7280',
+              font: { size: 10 },
+              maxTicksLimit: 8,
+              maxRotation: 0,
+            },
+            grid: { color: 'rgba(255,255,255,.04)' },
+          },
+          y: {
+            ticks: {
+              color: '#6b7280',
+              font: { size: 10 },
+              callback: v => '$' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toLocaleString()),
+            },
+            grid: { color: 'rgba(255,255,255,.04)' },
+          },
+        },
+      },
+    });
+  } catch (_) {
+    if (card) card.style.display = 'none';
+  }
 }
 
 // ─── CHART.JS GRAFİKLER ───────────────────────────────────────────────────

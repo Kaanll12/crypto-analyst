@@ -47,6 +47,19 @@
       position: relative;
       height: 220px;
     }
+    .pf-chart-full { margin-bottom: 16px; }
+    .pf-chart-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+    }
+    .pf-chart-legend {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--fg-muted, #8b8fa8);
+    }
+    .pf-legend-dot {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; flex-shrink: 0;
+    }
 
     /* ── TOPLAM P&L ÖZET KARTI ─────────────────────────────────────── */
     .pf-pnl-summary {
@@ -285,6 +298,20 @@
           <div class="pnl-sum-card">
             <div class="pnl-sum-label">En Kötü Performans</div>
             <div class="pnl-sum-val neutral" id="sumWorstCoin" style="font-size:14px">—</div>
+          </div>
+        </div>
+
+        <!-- Performans Grafiği (tam genişlik) -->
+        <div class="pf-chart-card pf-chart-full" id="perfChartCard" style="margin-bottom:16px">
+          <div class="pf-chart-header">
+            <div class="pf-chart-title">📈 Portföy Performansı (Son 30 Gün)</div>
+            <div class="pf-chart-legend">
+              <span class="pf-legend-dot" style="background:#6366f1"></span><span>Portföy Değeri</span>
+              <span class="pf-legend-dot" style="background:#f59e0b;margin-left:12px"></span><span>Yatırım</span>
+            </div>
+          </div>
+          <div class="pf-chart-canvas-wrap" style="height:220px">
+            <canvas id="perfChart"></canvas>
           </div>
         </div>
 

@@ -86,6 +86,83 @@ router.get('/summary', authenticate, async (req, res) => {
   }
 });
 
+// ─── PORTFÖY PERFORMANS GRAFİĞİ (son 30 gün) ─────────────────────────────
+router.get('/performance', authenticate, async (req, res) => {
+  try {
+    const rows = db.prepare(`SELECT * FROM portfolio WHERE user_id = ?`).all(req.user.id);
+    if (!rows.length) return res.json({ labels: [], values: [], invested: [] });
+
+    const BINANCE_SYM = {
+      'bitcoin':      'BTCUSDT',
+      'ethereum':     'ETHUSDT',
+      'solana':       'SOLUSDT',
+      'binancecoin':  'BNBUSDT',
+      'ripple':       'XRPUSDT',
+      'cardano':      'ADAUSDT',
+      'dogecoin':     'DOGEUSDT',
+      'avalanche-2':  'AVAXUSDT',
+      'polkadot':     'DOTUSDT',
+    };
+
+    const DAYS = 30;
+    const uniqueCoins = [...new Set(rows.map(r => r.coin_id))];
+
+    // Coin başına günlük fiyat geçmişini çek
+    const priceMap = {}; // { coinId: { 'YYYY-MM-DD': price } }
+    await Promise.all(uniqueCoins.map(async coinId => {
+      const symbol = BINANCE_SYM[coinId];
+      if (!symbol) return;
+      try {
+        const r = await fetch(
+          `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=${DAYS + 1}`
+        );
+        if (!r.ok) return;
+        const klines = await r.json();
+        priceMap[coinId] = {};
+        klines.forEach(k => {
+          const date = new Date(k[0]).toISOString().split('T')[0];
+          priceMap[coinId][date] = parseFloat(k[4]); // close price
+        });
+      } catch (_) {}
+    }));
+
+    // Son DAYS günlük tarih listesi
+    const labels = [];
+    for (let i = DAYS - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      labels.push(d.toISOString().split('T')[0]);
+    }
+
+    // Her gün için portföy değeri ve yatırım toplamı
+    const values   = labels.map(date => {
+      let total = 0;
+      rows.forEach(row => {
+        if (row.buy_date <= date) {
+          const price = priceMap[row.coin_id]?.[date] || 0;
+          total += row.amount * price;
+        }
+      });
+      return +total.toFixed(2);
+    });
+
+    const invested = labels.map(date => {
+      let total = 0;
+      rows.forEach(row => {
+        if (row.buy_date <= date) {
+          total += row.amount * row.buy_price;
+        }
+      });
+      return +total.toFixed(2);
+    });
+
+    res.json({ labels, values, invested });
+  } catch (err) {
+    console.error('Performance error:', err);
+    res.status(500).json({ error: 'Performans verisi alınamadı.' });
+  }
+});
+
 // ─── POZİSYON EKLE ────────────────────────────────────────────────────────
 router.post('/',
   authenticate,
