@@ -19,6 +19,7 @@ let currentAnalysis = null;
 let usageData = { used: 0, limit: 2, remaining: 2, isVip: false };
 let priceChart = null;
 let currentChartDays = 7;
+let watchlist = new Set(); // favori coin id'leri
 
 // toast() → utils.js'den gelir (window.toast)
 
@@ -138,6 +139,7 @@ async function fetchPrices() {
   renderTicker();
   renderCoinTabs();
   updatePriceCard();
+  renderWatchlistCard();
 }
 
 function renderTicker() {
@@ -167,12 +169,11 @@ function renderCoinTabs() {
   document.getElementById('coinTabs').innerHTML = COINS.map(c => {
     const d = prices[c.id] || {};
     const ch = d.price_change_percentage_24h || 0;
-    const price = d.current_price
-      ? `$${d.current_price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-      : '—';
-    return `<button class="coin-tab ${c.id === selected.id ? 'active' : ''}" onclick="selectCoin('${c.id}')">
+    const starred = watchlist.has(c.id);
+    return `<button class="coin-tab ${c.id === selected.id ? 'active' : ''} ${starred ? 'starred' : ''}" onclick="selectCoin('${c.id}')">
       <span class="coin-tab-sym">${c.sym}</span>
       <span class="coin-tab-ch ${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%</span>
+      <span class="coin-tab-star" onclick="toggleWatchlist(event,'${c.id}')" title="${starred ? 'Favorilerden çıkar' : 'Favorilere ekle'}">★</span>
     </button>`;
   }).join('');
 }
@@ -587,6 +588,75 @@ async function upgradeToVip() {
   }
 }
 
+// ─── WATCHLIST ───────────────────────────────────────────────────────────────
+async function loadWatchlist() {
+  if (!window.currentUser) return;
+  try {
+    const res = await window.apiFetch('/api/watchlist');
+    if (!res.ok) return;
+    const json = await res.json();
+    watchlist = new Set(json.data || []);
+    renderCoinTabs();
+    renderWatchlistCard();
+    const card = document.getElementById('watchlistCard');
+    if (card) card.style.display = watchlist.size > 0 ? '' : 'none';
+  } catch(_) {}
+}
+
+function renderWatchlistCard() {
+  const body = document.getElementById('watchlistBody');
+  if (!body) return;
+  if (watchlist.size === 0) {
+    body.innerHTML = '<div class="watchlist-empty">Favori coin yok. Coin sekmelerindeki ★ ile ekleyin.</div>';
+    return;
+  }
+  body.innerHTML = [...watchlist].map(coinId => {
+    const c = COINS.find(x => x.id === coinId);
+    if (!c) return '';
+    const d = prices[coinId] || {};
+    const ch = d.price_change_percentage_24h || 0;
+    const priceStr = d.current_price
+      ? `$${d.current_price.toLocaleString('en-US', { maximumFractionDigits: d.current_price < 1 ? 4 : 2 })}`
+      : '—';
+    return `<div class="watchlist-item" onclick="selectCoin('${coinId}')">
+      <div class="watchlist-coin">
+        <span class="watchlist-avatar" style="color:${c.avatarColor}">${c.avatar}</span>
+        <div>
+          <div class="watchlist-sym">${c.sym}</div>
+          <div class="watchlist-name">${c.name}</div>
+        </div>
+      </div>
+      <div class="watchlist-price">
+        <div class="watchlist-price-val">${priceStr}</div>
+        <div class="watchlist-change ${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleWatchlist = async function(e, coinId) {
+  e.stopPropagation(); // coin seçimini tetikleme
+  if (!window.currentUser) { openModal('loginModal'); return; }
+
+  try {
+    if (watchlist.has(coinId)) {
+      await window.apiFetch(`/api/watchlist/${coinId}`, { method: 'DELETE' });
+      watchlist.delete(coinId);
+      toast('Favorilerden çıkarıldı.', 'info');
+    } else {
+      await window.apiFetch(`/api/watchlist/${coinId}`, { method: 'POST' });
+      watchlist.add(coinId);
+      toast('Favorilere eklendi! ⭐', 'success');
+    }
+    renderCoinTabs();
+    renderWatchlistCard();
+    const card = document.getElementById('watchlistCard');
+    if (card) card.style.display = watchlist.size > 0 ? '' : 'none';
+  } catch(_) {
+    toast('Bağlantı hatası.', 'error');
+  }
+};
+
 // ─── MARKET SUMMARY + FEAR & GREED ──────────────────────────────────────────
 async function loadMarketSummary() {
   try {
@@ -858,6 +928,7 @@ window.onUserLogin = function(user, usage) {
   if (usage) renderUsageCard(usage);
   loadUsage();
   loadHistory();
+  loadWatchlist();
 };
 
 window.onUserLogout = function() {
@@ -865,6 +936,10 @@ window.onUserLogout = function() {
   document.getElementById('userArea').style.display = 'none';
   document.getElementById('usageCard').style.display = 'none';
   document.getElementById('vipBadgeCard').style.display = 'none';
+  const wlCard = document.getElementById('watchlistCard');
+  if (wlCard) wlCard.style.display = 'none';
+  watchlist.clear();
+  renderCoinTabs();
   updateGenButton(false);
   resetAnalysisPanel();
 };

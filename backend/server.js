@@ -22,7 +22,8 @@ const pricesRoutes   = require('./routes/prices');
 const adminRoutes    = require('./routes/admin');
 
 // Yeni rotalar — hata olursa server ayakta kalsın
-let notifyRoutes, emailRoutes, telegramRoutes, oauthRoutes;
+let notifyRoutes, emailRoutes, telegramRoutes, oauthRoutes, watchlistRoutes;
+try { watchlistRoutes = require('./routes/watchlist'); } catch(e) { console.error('⚠️  watchlist route yüklenemedi:', e.message); }
 try { notifyRoutes  = require('./routes/notifications'); } catch(e) { console.error('⚠️  notifications route yüklenemedi:', e.message); }
 try { emailRoutes   = require('./routes/email');         } catch(e) { console.error('⚠️  email route yüklenemedi:', e.message); }
 try { telegramRoutes = require('./routes/telegram');     } catch(e) { console.error('⚠️  telegram route yüklenemedi:', e.message); }
@@ -59,7 +60,8 @@ app.use('/api/admin',         adminRoutes);
 if (notifyRoutes)   app.use('/api/notifications', notifyRoutes);
 if (emailRoutes)    app.use('/api/email',         emailRoutes);
 if (telegramRoutes) app.use('/api/telegram',      telegramRoutes);
-if (oauthRoutes)    app.use('/api/oauth',          oauthRoutes);
+if (oauthRoutes)      app.use('/api/oauth',      oauthRoutes);
+if (watchlistRoutes)  app.use('/api/watchlist',  watchlistRoutes);
 
 // ─── SAĞLIK KONTROLÜ ─────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

@@ -137,6 +137,18 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_usage_user_date  ON user_daily_usage(user_id, usage_date);
   `);
 
+    -- FAVORİLER (WATCHLIST)
+    CREATE TABLE IF NOT EXISTS watchlist (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    TEXT NOT NULL,
+      coin_id    TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, coin_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
+  `);
+
   // Mevcut tabloya signal/confidence/risk_level kolonları ekle (migration)
   try { db.exec(`ALTER TABLE analyses ADD COLUMN signal TEXT DEFAULT 'neutral'`); } catch(_) {}
   try { db.exec(`ALTER TABLE analyses ADD COLUMN confidence INTEGER DEFAULT 50`); } catch(_) {}
