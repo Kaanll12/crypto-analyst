@@ -495,25 +495,33 @@
         <!-- PİYASA ÖZETİ + FEAR & GREED -->
         <div class="side-card" id="marketSummaryCard" style="margin-top:16px">
           <div class="side-card-header">
-            <div class="side-card-title">Piyasa Özeti</div>
+            <div class="side-card-title">🌐 Piyasa Özeti</div>
           </div>
           <div class="side-card-body" id="marketSummaryBody">
-            <div class="skeleton-row" style="margin-bottom:8px"><div class="skeleton-lines"><div class="skeleton skeleton-text" style="width:80%"></div><div class="skeleton skeleton-text" style="width:55%"></div></div></div>
+            <div class="market-stats-grid">
+              <div class="skeleton skeleton-text" style="height:52px;border-radius:6px"></div>
+              <div class="skeleton skeleton-text" style="height:52px;border-radius:6px"></div>
+              <div class="skeleton skeleton-text" style="height:52px;border-radius:6px"></div>
+              <div class="skeleton skeleton-text" style="height:52px;border-radius:6px"></div>
+            </div>
           </div>
           <!-- Fear & Greed -->
           <div class="fg-widget" id="fearGreedWidget">
             <div class="fg-header">
-              <span class="fg-label">Korku & Açgözlülük</span>
+              <span class="fg-label">Korku &amp; Açgözlülük</span>
               <span class="fg-date" id="fgDate">—</span>
             </div>
-            <div class="fg-meter">
-              <div class="fg-bar-track">
-                <div class="fg-bar-fill" id="fgBar" style="width:50%"></div>
-              </div>
-              <div class="fg-score-row">
-                <span class="fg-score" id="fgScore">—</span>
-                <span class="fg-classification" id="fgClass">Yükleniyor…</span>
-              </div>
+            <div class="fg-score-row">
+              <span class="fg-score" id="fgScore">—</span>
+              <span class="fg-classification" id="fgClass">Yükleniyor…</span>
+            </div>
+            <div class="fg-bar-track">
+              <div class="fg-bar-fill" id="fgBar" style="width:50%"></div>
+            </div>
+            <div class="fg-ticks">
+              <span class="fg-tick">Korku</span>
+              <span class="fg-tick">Nötr</span>
+              <span class="fg-tick">Açgözlülük</span>
             </div>
           </div>
         </div>

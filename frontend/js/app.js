@@ -671,20 +671,19 @@ async function loadMarketSummary() {
       : '$' + (v / 1e9).toFixed(1) + 'B';
 
     const rows = [
-      { label: 'Toplam Piyasa Değeri', val: fmt(d.total_market_cap.usd) },
-      { label: '24s Hacim',            val: fmt(d.total_volume.usd) },
-      { label: 'BTC Dominansı',        val: d.market_cap_percentage.btc.toFixed(1) + '%' },
-      { label: 'ETH Dominansı',        val: d.market_cap_percentage.eth.toFixed(1) + '%' },
-      { label: 'Aktif Coin Sayısı',    val: d.active_cryptocurrencies.toLocaleString('tr-TR') },
+      { label: 'Piyasa Değeri',  val: fmt(d.total_market_cap.usd), wide: true },
+      { label: '24s Hacim',      val: fmt(d.total_volume.usd),      wide: true },
+      { label: '₿ BTC Dom.',     val: d.market_cap_percentage.btc.toFixed(1) + '%' },
+      { label: 'Ξ ETH Dom.',     val: d.market_cap_percentage.eth.toFixed(1) + '%' },
     ];
 
     const el = document.getElementById('marketSummaryBody');
-    if (el) el.innerHTML = rows.map(r =>
-      `<div class="market-stat-row">
-        <span class="market-stat-label">${r.label}</span>
-        <span class="market-stat-val">${r.val}</span>
+    if (el) el.innerHTML = `<div class="market-stats-grid">${rows.map(r =>
+      `<div class="market-stat-cell${r.wide ? ' wide' : ''}">
+        <div class="market-stat-label">${r.label}</div>
+        <div class="market-stat-val">${r.val}</div>
       </div>`
-    ).join('');
+    ).join('')}</div>`;
   } catch(_) {
     const el = document.getElementById('marketSummaryBody');
     if (el) el.innerHTML = '<div style="font-size:11px;color:var(--fg-subtle);padding:4px 0">Piyasa verisi alınamadı.</div>';
