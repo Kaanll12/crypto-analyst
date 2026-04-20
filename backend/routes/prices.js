@@ -4,6 +4,7 @@
 
 const express = require('express');
 const router  = express.Router();
+const { pricesLimiter } = require('../middleware/security');
 
 const COINS = ['bitcoin','ethereum','solana','binancecoin','ripple','cardano','dogecoin','avalanche-2','polkadot'];
 
@@ -29,7 +30,7 @@ async function fetchFromCoinGecko() {
 }
 
 // ─── GET /api/prices ─────────────────────────────────────────────────────────
-router.get('/', async (_req, res) => {
+router.get('/', pricesLimiter, async (_req, res) => {
   try {
     const now = Date.now();
 
@@ -83,7 +84,7 @@ router.get('/', async (_req, res) => {
 });
 
 // ─── GET /api/prices/:coinId ──────────────────────────────────────────────────
-router.get('/:coinId', async (req, res) => {
+router.get('/:coinId', pricesLimiter, async (req, res) => {
   const coinId = req.params.coinId.toLowerCase();
   if (!COINS.includes(coinId)) {
     return res.status(404).json({ error: 'Desteklenmeyen coin.' });
@@ -110,7 +111,7 @@ router.get('/:coinId', async (req, res) => {
 const historyCache = {};
 const HISTORY_TTL  = 5 * 60 * 1000;
 
-router.get('/history/:coinId/:days', async (req, res) => {
+router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   const coinId = req.params.coinId.toLowerCase();
   const days   = parseInt(req.params.days) || 7;
 

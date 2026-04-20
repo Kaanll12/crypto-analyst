@@ -76,6 +76,24 @@ const analysisLimiter = rateLimit({
   message: { error: 'Saatlik analiz limitine ulaştınız.' },
 });
 
+// Fiyat endpoint'leri için — CoinGecko quota koruması
+const pricesLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 dakika
+  max: 30,
+  message: { error: 'Çok fazla fiyat isteği. Biraz bekleyin.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Alarm oluşturma için ek koruma
+const alertsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 dakika
+  max: 20,
+  message: { error: 'Çok fazla alarm isteği. 15 dakika bekleyin.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── SANITIZE ─────────────────────────────────────────────────────────────
 function sanitizeInput(req, _res, next) {
   const sanitize = (obj) => {
@@ -133,6 +151,6 @@ function httpsRedirect(req, res, next) {
 
 module.exports = {
   helmetMiddleware, corsMiddleware,
-  generalLimiter, authLimiter, analysisLimiter,
+  generalLimiter, authLimiter, analysisLimiter, pricesLimiter, alertsLimiter,
   sanitizeInput, apiLogger, httpsRedirect,
 };

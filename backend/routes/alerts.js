@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { body, param, validationResult } = require('express-validator');
 const db = require('../config/database');
 const { authenticate } = require('../middleware/auth');
+const { alertsLimiter } = require('../middleware/security');
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.get('/', authenticate, (req, res) => {
 
 // ─── ALARM EKLE ───────────────────────────────────────────────────────────
 router.post('/',
+  alertsLimiter,
   authenticate,
   [
     body('coinId').isString().notEmpty(),
