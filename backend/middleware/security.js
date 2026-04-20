@@ -19,6 +19,7 @@ const helmetMiddleware = helmet({
                        'api.coingecko.com', 'pro-api.coingecko.com',
                        'api.binance.com',
                        'api.alternative.me',
+                       'cdnjs.cloudflare.com',
                        'sandbox-api.paddle.com', 'api.paddle.com',
                        'cdn.paddle.com',
                        'open.er-api.com',
