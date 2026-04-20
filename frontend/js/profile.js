@@ -155,12 +155,23 @@ window.changeUsername = async function() {
 // ─── VIP YÜKSELTME ────────────────────────────────────────────────────────
 window.upgradeVip = async function() {
   try {
-    const res = await window.apiFetch('/api/auth/upgrade-vip', { method: 'POST' });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || 'Hata.', 'error'); return; }
-    toast(data.message || 'VIP aktifleştirildi!', 'success');
-    document.getElementById('upgradeCard').style.display = 'none';
-    await loadProfile();
+    // Paddle yapılandırmasını kontrol et
+    const plansRes = await fetch((window.API_BASE || '') + '/api/payments/plans');
+    if (!plansRes.ok) throw new Error();
+    const plansData = await plansRes.json();
+
+    if (plansData.paddleEnabled) {
+      // Paddle aktif → ödeme sayfasına yönlendir
+      window.location.href = '/#pricing';
+    } else {
+      // Demo mod → ücretsiz demo aktivasyonu
+      const res = await window.apiFetch('/api/payments/upgrade-demo', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || 'Hata.', 'error'); return; }
+      toast(data.message || 'VIP aktifleştirildi!', 'success');
+      document.getElementById('upgradeCard').style.display = 'none';
+      await loadProfile();
+    }
   } catch {
     toast('Bağlantı hatası.', 'error');
   }

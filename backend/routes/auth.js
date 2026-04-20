@@ -128,19 +128,11 @@ router.get('/me', authenticate, (req, res) => {
   });
 });
 
-// ─── VIP'E GEÇ (demo — gerçek ödeme entegrasyonu için genişletilebilir) ──
-router.post('/upgrade-vip', authenticate, (req, res) => {
-  try {
-    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(req.user.id);
-    if (user.role === 'admin') {
-      return res.json({ message: 'Admin zaten sınırsız erişime sahip.' });
-    }
-    db.prepare('UPDATE users SET role = ? WHERE id = ?').run('vip', req.user.id);
-    res.json({ message: 'VIP üyeliğiniz aktifleştirildi! Artık sınırsız analiz yapabilirsiniz.' });
-  } catch (err) {
-    console.error('Upgrade error:', err);
-    res.status(500).json({ error: 'Yükseltme işlemi başarısız.' });
-  }
+// ─── VIP'E GEÇ (kaldırıldı — ödeme güvenliği) ───────────────────────────
+// Bu endpoint kaldırıldı. VIP aktivasyonu yalnızca Paddle webhook veya
+// /api/payments/upgrade-demo (Paddle yapılandırılmamışsa) üzerinden yapılabilir.
+router.post('/upgrade-vip', authenticate, (_req, res) => {
+  res.status(403).json({ error: 'Bu endpoint devre dışı. Lütfen ödeme sayfasını kullanın.' });
 });
 
 // ─── KULLANICI ADI DEĞİŞTİR ──────────────────────────────────────────────
