@@ -17,6 +17,7 @@ const helmetMiddleware = helmet({
       imgSrc:         ["'self'", 'data:', 'blob:', 'https:'],
       connectSrc:     ["'self'",
                        'api.coingecko.com', 'pro-api.coingecko.com',
+                       'api.binance.com',
                        'api.alternative.me',
                        'sandbox-api.paddle.com', 'api.paddle.com',
                        'cdn.paddle.com',

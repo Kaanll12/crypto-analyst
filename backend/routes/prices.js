@@ -84,15 +84,29 @@ router.get('/', pricesLimiter, async (_req, res) => {
 });
 
 // ─── GET /api/prices/history/:coinId/:days ────────────────────────────────────
-// CoinGecko market_chart proxy — 5 dakika cache
+// Binance Klines API — API key gerekmez, yüksek rate limit
 const historyCache = {};
-const HISTORY_TTL  = 15 * 60 * 1000; // 15 dakika — CoinGecko rate limit koruması
+const HISTORY_TTL  = 10 * 60 * 1000; // 10 dakika cache
+
+// CoinGecko id → Binance sembol eşleşmesi
+const BINANCE_SYMBOLS = {
+  'bitcoin':      'BTCUSDT',
+  'ethereum':     'ETHUSDT',
+  'solana':       'SOLUSDT',
+  'binancecoin':  'BNBUSDT',
+  'ripple':       'XRPUSDT',
+  'cardano':      'ADAUSDT',
+  'dogecoin':     'DOGEUSDT',
+  'avalanche-2':  'AVAXUSDT',
+  'polkadot':     'DOTUSDT',
+};
 
 router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   const coinId = req.params.coinId.toLowerCase();
   const days   = parseInt(req.params.days) || 7;
 
-  if (!COINS.includes(coinId)) {
+  const symbol = BINANCE_SYMBOLS[coinId];
+  if (!symbol) {
     return res.status(404).json({ error: 'Desteklenmeyen coin.' });
   }
   if (![1, 7, 14, 30, 90].includes(days)) {
@@ -107,30 +121,27 @@ router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   }
 
   try {
-    // CoinGecko free tier: interval'ı otomatik belirlesin (daily/weekly)
-    // 'weekly' parametresi free tier'da hata veriyor
-    const intervalParam = days <= 1 ? '&interval=hourly' : '';
-    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
-                `?vs_currency=usd&days=${days}${intervalParam}`;
+    // Binance klines: 1 gün → 1 saatlik mum, diğerleri → günlük mum
+    const interval = days <= 1 ? '1h' : '1d';
+    const limit    = days <= 1 ? 24 : days;
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+
     const r = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(10000),
     });
-    if (r.status === 429) {
-      if (hit) return res.json({ data: hit.data, cached: true, stale: true });
-      return res.status(429).json({ error: 'Rate limit. Kısa süre sonra tekrar deneyin.' });
-    }
-    if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
+    if (!r.ok) throw new Error(`Binance HTTP ${r.status}`);
 
     const raw = await r.json();
-    // Sadece [timestamp, price] dizisini normalize et
-    const prices = (raw.prices || []).map(([ts, price]) => ({
-      t: ts,
-      p: +price.toFixed(4),
+    // Binance kline formatı: [openTime, open, high, low, close, ...]
+    // Kapanış fiyatı (index 4) kullanıyoruz
+    const data = raw.map(k => ({
+      t: k[0],           // open timestamp
+      p: +parseFloat(k[4]).toFixed(4), // close price
     }));
 
-    historyCache[key] = { data: prices, ts: Date.now() };
-    res.json({ data: prices, cached: false });
+    historyCache[key] = { data, ts: Date.now() };
+    res.json({ data, cached: false });
   } catch (err) {
     if (hit) return res.json({ data: hit.data, cached: true, stale: true });
     res.status(503).json({ error: 'Geçmiş veri alınamadı.', detail: err.message });
