@@ -4,7 +4,7 @@
 'use strict';
 
 // Versiyon numarasını her deploy sonrası artır — eski önbellek otomatik temizlenir
-const CACHE_NAME    = 'crypto-analyst-v11';
+const CACHE_NAME    = 'crypto-analyst-v12';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

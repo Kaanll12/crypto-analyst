@@ -118,8 +118,8 @@ router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
   if (!COINS.includes(coinId)) {
     return res.status(404).json({ error: 'Desteklenmeyen coin.' });
   }
-  if (![1, 7, 14, 30].includes(days)) {
-    return res.status(400).json({ error: 'Geçerli gün: 1, 7, 14, 30.' });
+  if (![1, 7, 14, 30, 90].includes(days)) {
+    return res.status(400).json({ error: 'Geçerli gün: 1, 7, 14, 30, 90.' });
   }
 
   const key = `${coinId}_${days}`;
@@ -131,7 +131,7 @@ router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
 
   try {
     const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart` +
-                `?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : 'daily'}`;
+                `?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : days <= 30 ? 'daily' : 'weekly'}`;
     const r = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(10000),

@@ -17,6 +17,8 @@ let selected  = COINS[0];
 let prices    = {};
 let currentAnalysis = null;
 let usageData = { used: 0, limit: 2, remaining: 2, isVip: false };
+let priceChart = null;
+let currentChartDays = 7;
 
 // toast() → utils.js'den gelir (window.toast)
 
@@ -181,7 +183,110 @@ function selectCoin(id) {
   updatePriceCard();
   resetAnalysisPanel();
   drawSparkline(id);
+  loadPriceChart(currentChartDays);
+  document.getElementById('chartTitle').textContent = selected.name + ' Fiyat Grafiği';
 }
+
+// ─── FİYAT GRAFİĞİ ────────────────────────────────────────────────────────
+window.loadPriceChart = async function(days) {
+  currentChartDays = days;
+
+  // Period buton aktif durumu
+  ['7','30','90'].forEach(d => {
+    const btn = document.getElementById('chartBtn' + d);
+    if (btn) btn.classList.toggle('active', String(days) === d);
+  });
+
+  const loading = document.getElementById('chartLoading');
+  const canvas  = document.getElementById('priceChartCanvas');
+  if (loading) loading.classList.add('visible');
+  if (canvas)  canvas.style.opacity = '0';
+
+  try {
+    const r = await fetch(`${window.API_BASE || ''}/api/prices/history/${selected.id}/${days}`);
+    if (!r.ok) throw new Error('history ' + r.status);
+    const json = await r.json();
+    const histData = json.data; // [{t: timestamp, p: price}, ...]
+
+    if (!histData?.length) throw new Error('no data');
+
+    const labels = histData.map(p => {
+      const d = new Date(p.t);
+      return days <= 7
+        ? d.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric' })
+        : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    });
+    const values = histData.map(p => p.p);
+
+    const coinColor = selected.avatarColor || 'oklch(0.72 0.15 180)';
+    const isUp = values[values.length - 1] >= values[0];
+    const lineColor = isUp ? 'rgba(34,197,94,1)' : 'rgba(239,68,68,1)';
+    const fillColor = isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+
+    if (priceChart) { priceChart.destroy(); priceChart = null; }
+
+    const ctx = canvas.getContext('2d');
+    priceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: lineColor,
+          backgroundColor: fillColor,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: lineColor,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(19,22,40,0.95)',
+            borderColor: 'rgba(255,255,255,0.08)',
+            borderWidth: 1,
+            titleColor: 'rgba(255,255,255,0.6)',
+            bodyColor: '#fff',
+            padding: 10,
+            callbacks: {
+              label: ctx => ' $' + ctx.parsed.y.toLocaleString('en-US', { maximumFractionDigits: 2 }),
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 }, maxTicksLimit: 8 },
+            border: { color: 'rgba(255,255,255,0.06)' },
+          },
+          y: {
+            position: 'right',
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: {
+              color: 'rgba(255,255,255,0.35)',
+              font: { size: 10 },
+              callback: v => '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0, notation: 'compact' }),
+            },
+            border: { color: 'rgba(255,255,255,0.06)' },
+          },
+        },
+      },
+    });
+
+    if (canvas) canvas.style.opacity = '1';
+  } catch(e) {
+    console.warn('Grafik verisi alınamadı:', e.message);
+  } finally {
+    if (loading) loading.classList.remove('visible');
+  }
+};
 
 function updatePriceCard() {
   const d = prices[selected.id] || {};
@@ -700,6 +805,7 @@ window.onUserLogout = function() {
   ).join('');
 
   await Promise.all([fetchPrices(), loadStats(), loadReport()]);
+  loadPriceChart(7);
   setInterval(fetchPrices, 60000);
   setInterval(loadStats, 120000);
 })();

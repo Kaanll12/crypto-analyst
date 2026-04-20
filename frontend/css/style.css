@@ -1195,6 +1195,58 @@ canvas { display: block; }
 /* Upgrade box inner */
 .upgrade-box-inner { display: flex; align-items: flex-start; gap: 12px; }
 
+/* ═══ FİYAT GRAFİĞİ ════════════════════════════════════════════════════ */
+.price-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px 12px;
+  margin-bottom: 12px;
+}
+.price-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.price-chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.chart-period-btns {
+  display: flex;
+  gap: 4px;
+}
+.chart-period-btn {
+  background: var(--bg-card-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.chart-period-btn:hover { border-color: var(--border-mid); color: var(--fg); }
+.chart-period-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.price-chart-wrap {
+  position: relative;
+  height: 180px;
+}
+.price-chart-wrap canvas { width: 100% !important; height: 180px !important; }
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.chart-loading.visible { display: block; }
+
 /* ═══ LOADING SKELETON ══════════════════════════════════════════════════ */
 @keyframes skeleton-shimmer {
   0%   { background-position: 200% 0; }
