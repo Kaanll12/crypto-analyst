@@ -165,6 +165,9 @@ function initDatabase() {
   try { db.exec(`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`); } catch(_) {}
   try { db.exec(`ALTER TABLE users ADD COLUMN telegram_code TEXT`); } catch(_) {}
   try { db.exec(`ALTER TABLE users ADD COLUMN telegram_code_expires TEXT`); } catch(_) {}
+  // E-posta doğrulama
+  try { db.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0`); } catch(_) {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN email_verify_token TEXT`); } catch(_) {}
   // Push bildirim geçmişi
   try { db.exec(`
     CREATE TABLE IF NOT EXISTS notification_history (

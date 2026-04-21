@@ -64,6 +64,13 @@
 <!-- ═══ TOAST ════════════════════════════════════════════════════════════ -->
 <div id="toastContainer" class="toast-container"></div>
 
+<!-- ═══ E-POSTA DOĞRULAMA BANNER'I ══════════════════════════════════════ -->
+<div id="verifyBanner" style="display:none;background:linear-gradient(90deg,oklch(0.45 0.18 220),oklch(0.50 0.20 200));padding:10px 16px;text-align:center;font-size:13px;color:#fff;position:relative;z-index:100">
+  <span>📧 E-posta adresiniz henüz doğrulanmadı. </span>
+  <button onclick="resendVerification()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px" id="resendBtn">Doğrulama Maili Gönder</button>
+  <button onclick="document.getElementById('verifyBanner').style.display='none'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;line-height:1">×</button>
+</div>
+
 <!-- ═══ HEADER (hero_landing design) ════════════════════════════════════ -->
 <header class="header" id="header">
   <div class="header-inner">

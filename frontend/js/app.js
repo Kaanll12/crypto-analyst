@@ -923,6 +923,37 @@ async function loadNews(coinId) {
   }
 }
 
+// ─── E-POSTA DOĞRULAMA BANNER ────────────────────────────────────────────────
+function checkVerifyBanner(user) {
+  const banner = document.getElementById('verifyBanner');
+  if (!banner) return;
+  // Admin ve VIP için gösterme, zaten doğrulanmış için de gösterme
+  if (user.email_verified || user.role === 'admin' || user.role === 'vip') {
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = '';
+  }
+}
+
+window.resendVerification = async function() {
+  const btn = document.getElementById('resendBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor…'; }
+  try {
+    const res = await window.apiFetch('/api/auth/resend-verification', { method: 'POST' });
+    const d = await res.json();
+    if (res.ok) {
+      toast('✅ Doğrulama maili gönderildi! Gelen kutunuzu kontrol edin.', 'success');
+      if (btn) btn.textContent = 'Gönderildi ✓';
+    } else {
+      toast(d.error || 'Gönderilemedi.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Tekrar Gönder'; }
+    }
+  } catch {
+    toast('Bağlantı hatası.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Tekrar Gönder'; }
+  }
+};
+
 // ─── AUTH HOOKS ──────────────────────────────────────────────────────────────
 window.onUserLogin = function(user, usage) {
   document.getElementById('authArea').style.display = 'none';
@@ -935,6 +966,7 @@ window.onUserLogin = function(user, usage) {
   loadUsage();
   loadHistory();
   loadWatchlist();
+  checkVerifyBanner(user);
 };
 
 window.onUserLogout = function() {
@@ -944,6 +976,8 @@ window.onUserLogout = function() {
   document.getElementById('vipBadgeCard').style.display = 'none';
   const wlCard = document.getElementById('watchlistCard');
   if (wlCard) wlCard.style.display = 'none';
+  const banner = document.getElementById('verifyBanner');
+  if (banner) banner.style.display = 'none';
   watchlist.clear();
   renderCoinTabs();
   updateGenButton(false);

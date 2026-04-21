@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>E-posta Doğrulama — CryptoAnalyst</title>
+  <meta name="robots" content="noindex"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .verify-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .verify-icon { font-size: 48px; margin-bottom: 16px; }
+    .verify-title { font-size: 1.3rem; font-weight: 700; color: var(--fg); margin-bottom: 10px; }
+    .verify-msg { font-size: .9rem; color: var(--fg-muted); line-height: 1.6; margin-bottom: 24px; }
+    .verify-btn {
+      display: inline-block;
+      padding: 11px 28px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: var(--r-md);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: .9rem;
+      transition: opacity .2s;
+    }
+    .verify-btn:hover { opacity: .85; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="verify-box" id="verifyBox">
+  <div class="spinner"></div>
+  <div class="verify-title">Doğrulanıyor…</div>
+  <div class="verify-msg">Lütfen bekleyin.</div>
+</div>
+
+<script>
+(async function() {
+  const box = document.getElementById('verifyBox');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  if (!token) {
+    box.innerHTML = `
+      <div class="verify-icon">❌</div>
+      <div class="verify-title">Geçersiz Link</div>
+      <div class="verify-msg">Doğrulama linki eksik veya hatalı.</div>
+      <a href="/" class="verify-btn">Ana Sayfaya Dön</a>`;
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/auth/verify-email?token=' + encodeURIComponent(token));
+    const d = await r.json();
+
+    if (r.ok) {
+      box.innerHTML = `
+        <div class="verify-icon">✅</div>
+        <div class="verify-title">E-posta Doğrulandı!</div>
+        <div class="verify-msg">${d.message}<br><br>Artık tüm özelliklere erişebilirsiniz.</div>
+        <a href="/" class="verify-btn">Ana Sayfaya Git</a>`;
+    } else {
+      box.innerHTML = `
+        <div class="verify-icon">⚠️</div>
+        <div class="verify-title">Doğrulama Başarısız</div>
+        <div class="verify-msg">${d.error || 'Bir hata oluştu.'}<br><br>Link geçersiz veya süresi dolmuş olabilir.</div>
+        <a href="/" class="verify-btn">Ana Sayfaya Dön</a>`;
+    }
+  } catch {
+    box.innerHTML = `
+      <div class="verify-icon">❌</div>
+      <div class="verify-title">Bağlantı Hatası</div>
+      <div class="verify-msg">Sunucuya ulaşılamadı. Lütfen tekrar deneyin.</div>
+      <a href="/" class="verify-btn">Ana Sayfaya Dön</a>`;
+  }
+})();
+</script>
+</body>
+</html>

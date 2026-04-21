@@ -10,6 +10,30 @@ const { authLimiter } = require('../middleware/security');
 
 const router = express.Router();
 
+const crypto = require('crypto');
+
+// E-posta gönderici yardımcısı (Resend)
+async function sendEmail({ to, subject, html }) {
+  if (!process.env.SMTP_PASS) return false;
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.SMTP_PASS}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.SMTP_FROM || 'CryptoAnalyst <noreply@crypto-analyst.app>',
+        to: [to], subject, html,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
+const APP_URL = () => process.env.APP_URL || 'https://crypto-analyst.app';
+
 // ─── KAYIT ────────────────────────────────────────────────────────────────
 router.post('/register',
   authLimiter,
@@ -33,25 +57,43 @@ router.post('/register',
       const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
       if (existing) return res.status(409).json({ error: 'Bu e-posta adresi zaten kullanımda.' });
 
-      const hash = await bcrypt.hash(password, 12);
-      const id = uuidv4();
+      const hash       = await bcrypt.hash(password, 12);
+      const id         = uuidv4();
+      const verifyToken = crypto.randomBytes(32).toString('hex');
 
       db.prepare(`
-        INSERT INTO users (id, email, password, username, role)
-        VALUES (?, ?, ?, ?, 'user')
-      `).run(id, email, hash, username);
+        INSERT INTO users (id, email, password, username, role, email_verified, email_verify_token)
+        VALUES (?, ?, ?, ?, 'user', 0, ?)
+      `).run(id, email, hash, username, verifyToken);
 
       const token = jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
       });
 
-      // Kullanım bilgisini dahil et
+      // Doğrulama maili gönder
+      const verifyUrl = `${APP_URL()}/verify-email.html?token=${verifyToken}`;
+      await sendEmail({
+        to: email,
+        subject: 'CryptoAnalyst — E-posta Adresinizi Doğrulayın',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0f1117;color:#fff;border-radius:12px">
+            <h2 style="color:#0ea5e9;margin-bottom:16px">✉️ E-postanızı Doğrulayın</h2>
+            <p>Merhaba <strong>${username}</strong>, CryptoAnalyst'e hoş geldin!</p>
+            <p style="color:#aaa;margin:16px 0">Hesabını aktif etmek için e-posta adresini doğrulamanı istiyoruz.</p>
+            <a href="${verifyUrl}" style="display:inline-block;background:#0ea5e9;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:8px 0">E-postamı Doğrula</a>
+            <p style="color:#666;font-size:12px;margin-top:24px">Bu link 48 saat geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>
+            <hr style="border-color:#333;margin:24px 0"/>
+            <p style="color:#555;font-size:11px">© ${new Date().getFullYear()} CryptoAnalyst — crypto-analyst.app</p>
+          </div>
+        `,
+      });
+
       const usage = db.checkUsageLimit(id, 'user');
 
       res.status(201).json({
-        message: 'Hesap başarıyla oluşturuldu.',
+        message: 'Hesap oluşturuldu. Lütfen e-postanızı doğrulayın.',
         token,
-        user: { id, email, username, role: 'user' },
+        user: { id, email, username, role: 'user', email_verified: 0 },
         usage: { used: 0, limit: usage.limit, remaining: usage.limit },
       });
     } catch (err) {
@@ -94,7 +136,7 @@ router.post('/login',
       res.json({
         message: 'Giriş başarılı.',
         token,
-        user: { id: user.id, email: user.email, username: user.username, role: user.role },
+        user: { id: user.id, email: user.email, username: user.username, role: user.role, email_verified: user.email_verified || 0 },
         usage: {
           used: usage.used,
           limit: usage.limit,
@@ -126,6 +168,57 @@ router.get('/me', authenticate, (req, res) => {
       isVip: user.role === 'vip' || user.role === 'admin',
     },
   });
+});
+
+// ─── E-POSTA DOĞRULAMA ────────────────────────────────────────────────────
+router.get('/verify-email', async (req, res) => {
+  const { token } = req.query;
+  if (!token || token.length !== 64) {
+    return res.status(400).json({ error: 'Geçersiz doğrulama linki.' });
+  }
+
+  const user = db.prepare(
+    'SELECT id, email_verified FROM users WHERE email_verify_token = ?'
+  ).get(token);
+
+  if (!user) return res.status(400).json({ error: 'Doğrulama linki geçersiz veya süresi dolmuş.' });
+  if (user.email_verified) return res.json({ message: 'E-posta zaten doğrulanmış.' });
+
+  db.prepare('UPDATE users SET email_verified = 1, email_verify_token = NULL WHERE id = ?').run(user.id);
+  res.json({ message: 'E-posta başarıyla doğrulandı! Artık tüm özelliklere erişebilirsiniz.' });
+});
+
+// ─── YENİDEN DOĞRULAMA MAİLİ GÖNDER ─────────────────────────────────────
+router.post('/resend-verification', authenticate, authLimiter, async (req, res) => {
+  const user = db.prepare(
+    'SELECT id, email, username, email_verified FROM users WHERE id = ?'
+  ).get(req.user.id);
+
+  if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+  if (user.email_verified) return res.json({ message: 'E-posta zaten doğrulanmış.' });
+
+  const verifyToken = crypto.randomBytes(32).toString('hex');
+  db.prepare('UPDATE users SET email_verify_token = ? WHERE id = ?').run(verifyToken, user.id);
+
+  const verifyUrl = `${APP_URL()}/verify-email.html?token=${verifyToken}`;
+  const sent = await sendEmail({
+    to: user.email,
+    subject: 'CryptoAnalyst — E-posta Doğrulama (Yeniden)',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0f1117;color:#fff;border-radius:12px">
+        <h2 style="color:#0ea5e9;margin-bottom:16px">✉️ E-postanızı Doğrulayın</h2>
+        <p>Merhaba <strong>${user.username}</strong>,</p>
+        <p style="color:#aaa;margin:16px 0">Yeni doğrulama linkiniz aşağıdadır.</p>
+        <a href="${verifyUrl}" style="display:inline-block;background:#0ea5e9;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:8px 0">E-postamı Doğrula</a>
+        <p style="color:#666;font-size:12px;margin-top:24px">Bu link 48 saat geçerlidir.</p>
+        <hr style="border-color:#333;margin:24px 0"/>
+        <p style="color:#555;font-size:11px">© ${new Date().getFullYear()} CryptoAnalyst</p>
+      </div>
+    `,
+  });
+
+  if (sent) res.json({ message: 'Doğrulama maili gönderildi. Lütfen gelen kutunuzu kontrol edin.' });
+  else res.status(503).json({ error: 'Mail gönderilemedi. Lütfen daha sonra tekrar deneyin.' });
 });
 
 // ─── VIP'E GEÇ (kaldırıldı — ödeme güvenliği) ───────────────────────────
@@ -187,7 +280,6 @@ router.put('/change-password',
 );
 
 // ─── ŞİFREMİ UNUTTUM ────────────────────────────────────────────────────
-const crypto = require('crypto');
 
 router.post('/forgot-password',
   authLimiter,
