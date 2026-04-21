@@ -86,7 +86,7 @@ router.get('/', pricesLimiter, async (_req, res) => {
 // ─── GET /api/prices/history/:coinId/:days ────────────────────────────────────
 // Binance Klines API — API key gerekmez, yüksek rate limit
 const historyCache = {};
-const HISTORY_TTL  = 10 * 60 * 1000; // 10 dakika cache
+const HISTORY_TTL  = 3 * 60 * 1000; // 3 dakika cache
 
 // CoinGecko id → Binance sembol eşleşmesi
 const BINANCE_SYMBOLS = {
@@ -133,10 +133,11 @@ router.get('/history/:coinId/:days', pricesLimiter, async (req, res) => {
     if (!r.ok) throw new Error(`Binance HTTP ${r.status}`);
 
     const raw = await r.json();
-    // Binance kline formatı: [openTime, open, high, low, close, ...]
-    // Kapanış fiyatı (index 4) kullanıyoruz
+    // Binance kline formatı: [openTime, open, high, low, close, ..., closeTime, ...]
+    // closeTime (index 6) = mumun kapandığı zaman → label'ı bu zamana göre göster
+    // Son mum (bugün) hâlâ açık olduğundan closeTime = Date.now() olabilir, onu olduğu gibi alıyoruz
     const data = raw.map(k => ({
-      t: k[0],           // open timestamp
+      t: k[6],           // close timestamp (açık mum için = yakın gelecek; kapalı mum için = gün sonu)
       p: +parseFloat(k[4]).toFixed(4), // close price
     }));
 

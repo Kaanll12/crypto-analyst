@@ -219,6 +219,13 @@ window.loadPriceChart = async function(days) {
     });
     const values = histData.map(p => p.p);
 
+    // Son noktayı anlık fiyatla güncelle (cache'den eski gelmesin)
+    const livePrice = prices[selected.id]?.current_price;
+    if (livePrice && values.length > 0) {
+      values[values.length - 1] = livePrice;
+      labels[labels.length - 1] = 'Şimdi';
+    }
+
     const coinColor = selected.avatarColor || 'oklch(0.72 0.15 180)';
     const isUp = values[values.length - 1] >= values[0];
     const lineColor = isUp ? 'rgba(34,197,94,1)' : 'rgba(239,68,68,1)';
