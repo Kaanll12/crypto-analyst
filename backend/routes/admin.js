@@ -26,15 +26,23 @@ router.get('/stats', authenticate, requireAdmin, (_req, res) => {
     const totalReports  = db.prepare('SELECT COUNT(*) as n FROM daily_reports').get().n;
     const activeAlerts  = db.prepare('SELECT COUNT(*) as n FROM price_alerts WHERE is_active=1').get().n;
 
-    const weeklyTrend = db.prepare(`
+    // Son 30 günlük analiz trendi
+    const analysisTrend = db.prepare(`
       SELECT date(created_at) as day, COUNT(*) as count
-      FROM analyses WHERE created_at >= datetime('now','-7 days')
+      FROM analyses WHERE created_at >= datetime('now','-30 days')
+      GROUP BY date(created_at) ORDER BY day ASC
+    `).all();
+
+    // Son 30 günlük kullanıcı büyümesi
+    const userGrowth = db.prepare(`
+      SELECT date(created_at) as day, COUNT(*) as count
+      FROM users WHERE created_at >= datetime('now','-30 days')
       GROUP BY date(created_at) ORDER BY day ASC
     `).all();
 
     const topCoins = db.prepare(`
       SELECT coin_sym, coin_name, COUNT(*) as count
-      FROM analyses GROUP BY coin_id ORDER BY count DESC LIMIT 6
+      FROM analyses GROUP BY coin_id ORDER BY count DESC LIMIT 8
     `).all();
 
     const recentUsers = db.prepare(`
@@ -42,7 +50,18 @@ router.get('/stats', authenticate, requireAdmin, (_req, res) => {
       FROM users ORDER BY created_at DESC LIMIT 5
     `).all();
 
-    res.json({ stats: { totalUsers, activeUsers, vipUsers, totalAnalyses, todayAnalyses, totalReports, activeAlerts }, weeklyTrend, topCoins, recentUsers });
+    // Log istatistikleri — endpoint bazında istek sayısı
+    const logStats = db.prepare(`
+      SELECT endpoint, COUNT(*) as total,
+        SUM(CASE WHEN status_code < 400 THEN 1 ELSE 0 END) as ok,
+        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as err,
+        ROUND(AVG(duration_ms)) as avg_ms
+      FROM api_logs
+      WHERE created_at >= datetime('now','-1 day')
+      GROUP BY endpoint ORDER BY total DESC LIMIT 10
+    `).all();
+
+    res.json({ stats: { totalUsers, activeUsers, vipUsers, totalAnalyses, todayAnalyses, totalReports, activeAlerts }, analysisTrend, userGrowth, topCoins, recentUsers, logStats });
   } catch (err) {
     console.error('Admin stats error:', err);
     res.status(500).json({ error: 'İstatistikler alınamadı.' });
