@@ -1,6 +1,7 @@
 // automation/scheduler.js
 const cron = require('node-cron');
 const { generateDailyReport } = require('./dailyReport');
+const { runBackup } = require('./backup');
 let sendWeeklyDigest;
 try { ({ sendWeeklyDigest } = require('./emailDigest')); } catch(e) { console.error('⚠️  emailDigest yüklenemedi:', e.message); }
 
@@ -164,6 +165,17 @@ function startScheduler() {
       console.log(`🧹 Haftalık temizlik: ${deleted.changes} log, ${delNotif.changes} bildirim geçmişi silindi`);
     } catch(_) {
       console.log(`🧹 Haftalık temizlik: ${deleted.changes} eski log silindi`);
+    }
+  }, { timezone: 'Europe/Istanbul' });
+
+  // ─── GÜNLÜK SQLite YEDEKLEME (Her gün 03:00) ──────────────────────────
+  cron.schedule(process.env.BACKUP_CRON || '0 3 * * *', async () => {
+    console.log(`\n💾 [${new Date().toLocaleString('tr-TR')}] Otomatik yedekleme başladı`);
+    const result = await runBackup();
+    if (result.success) {
+      console.log(`✅ Yedekleme tamamlandı: ${result.fileName} (${result.sizeKb} KB)`);
+    } else {
+      console.error(`❌ Yedekleme başarısız: ${result.error}`);
     }
   }, { timezone: 'Europe/Istanbul' });
 

@@ -169,4 +169,26 @@ router.get('/logs', authenticate, requireAdmin, (_req, res) => {
   } catch (err) { res.status(500).json({ error: 'Loglar alınamadı.' }); }
 });
 
+// Yedek listesi
+router.get('/backups', authenticate, requireAdmin, (_req, res) => {
+  try {
+    const { listBackups } = require('../automation/backup');
+    res.json({ data: listBackups() });
+  } catch (err) {
+    res.status(500).json({ error: 'Yedekler listelenemedi.' });
+  }
+});
+
+// Manuel yedek al
+router.post('/backups/run', authenticate, requireAdmin, async (_req, res) => {
+  try {
+    const { runBackup } = require('../automation/backup');
+    const result = await runBackup();
+    if (result.success) res.json({ message: `Yedek alındı: ${result.fileName}`, data: result });
+    else res.status(500).json({ error: result.error });
+  } catch (err) {
+    res.status(500).json({ error: 'Yedekleme başarısız.' });
+  }
+});
+
 module.exports = router;

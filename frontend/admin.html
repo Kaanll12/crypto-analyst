@@ -150,6 +150,15 @@
           </table>
         </div>
       </div>
+
+      <!-- Yedek Yönetimi -->
+      <div class="chart-card" style="margin-top:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="chart-card-title" style="margin-bottom:0">💾 SQLite Yedekleri</div>
+          <button class="btn-xs success" onclick="runManualBackup()" id="backupBtn">Şimdi Yedekle</button>
+        </div>
+        <div id="backupList" style="font-size:.82rem;color:var(--fg-muted)">Yükleniyor…</div>
+      </div>
     </div>
 
     <!-- KULLANICILAR -->
@@ -399,6 +408,7 @@ async function loadDashboard() {
     ).join('');
 
   } catch(e) { console.error(e); window.toast('Dashboard yüklenemedi.', 'error'); }
+  loadBackups();
 }
 
 // ─── USERS
@@ -534,6 +544,45 @@ window.clearLogFilters = function() {
   if (st)  st.value  = '';
   renderLogs(_allLogs);
 };
+
+// ─── BACKUP
+async function loadBackups() {
+  const el = document.getElementById('backupList');
+  if (!el) return;
+  try {
+    const r = await window.apiFetch('/api/admin/backups');
+    const d = await r.json();
+    const list = d.data || [];
+    if (!list.length) {
+      el.innerHTML = '<span style="color:var(--fg-subtle)">Henüz yedek yok. "Şimdi Yedekle" ile ilk yedeği oluştur.</span>';
+      return;
+    }
+    el.innerHTML = `<table class="admin-table">
+      <thead><tr><th>Dosya</th><th>Boyut</th><th>Tarih</th></tr></thead>
+      <tbody>${list.map((b, i) => `
+        <tr>
+          <td style="font-family:'Geist Mono',monospace;font-size:.78rem">${i === 0 ? '🟢 ' : ''}${b.name}</td>
+          <td>${b.sizeKb} KB</td>
+          <td style="color:var(--fg-muted)">${new Date(b.created).toLocaleString('tr-TR')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch {
+    if (el) el.innerHTML = '<span style="color:var(--bearish)">Yedekler yüklenemedi.</span>';
+  }
+}
+
+async function runManualBackup() {
+  const btn = document.getElementById('backupBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Yedekleniyor…'; }
+  try {
+    const r = await window.apiFetch('/api/admin/backups/run', { method: 'POST' });
+    const d = await r.json();
+    if (r.ok) { window.toast('✅ ' + d.message, 'success'); await loadBackups(); }
+    else window.toast(d.error || 'Yedekleme başarısız.', 'error');
+  } catch { window.toast('Bağlantı hatası.', 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Şimdi Yedekle'; } }
+}
 
 function showNoAccess() {
   document.getElementById('noAccess').style.display = '';
